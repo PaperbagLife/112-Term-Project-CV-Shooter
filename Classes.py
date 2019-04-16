@@ -109,7 +109,31 @@ class MoveEnemy(Enemy):
         ##20 is one cycle of cos
         self.rect.centerx += 2*self.velocity*math.cos(self.cosCounter/200*2*math.pi)
     
-    
+class MiniBoss1(Enemy):
+    def __init__(self,health,exp,shootTimer,filePath,velocity,x = None):
+        super().__init__(health,exp,shootTimer,filePath,velocity,x = 300)
+        self.rect.bottom = 0
+        self.moveRight = True
+    def shoot(self,enemyBulletGroup,player):
+        self.timer -= 1
+        if self.timer <= 0:
+            direction = (0,-1)
+            for i in range(3): 
+                direction = [(-(1/(2**0.5)),1/(2**0.5)),(0,1),((1/(2**0.5)),1/(2**0.5))]
+                bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction[i])
+                enemyBulletGroup.add(bullet)
+            self.timer = self.shootTimer
+    def move(self):
+        if self.rect.top <= 0:
+            self.rect.centery += self.velocity
+        else:
+            if self.rect.right >= 600 or self.rect.left <= 0:
+                self.moveRight = not self.moveRight
+            if self.moveRight:
+                self.rect.centerx += self.velocity
+            else:
+                self.rect.centerx -= self.velocity
+        
 class EnemyStraightBullet(pygame.sprite.Sprite):
     def __init__(self,x,y,direction):
         pygame.sprite.Sprite.__init__(self)
@@ -133,5 +157,4 @@ class Level(object):
         self.level = level
     def __repr__(self):
         return self.level
-    
     

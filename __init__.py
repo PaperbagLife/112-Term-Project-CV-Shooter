@@ -38,6 +38,8 @@ def spawn(enemyGroup,levels,curLevelProgress):
             elif enemyType == "Moving":
                 curEnemy = MoveEnemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
                                     random.randint(i*(windowWidth-100)/numSpawn+50,(i+1)*(windowWidth-100)/numSpawn)-50)
+            elif enemyType == "MiniBoss":
+                curEnemy = MiniBoss1(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5])
             enemyGroup.add(curEnemy)
         return (curLevel.spawnWait[levelProgress],(level+1,0))
     else:
@@ -52,6 +54,8 @@ def spawn(enemyGroup,levels,curLevelProgress):
             elif enemyType == "Moving":
                 curEnemy = MoveEnemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
                                     random.randint(i*(windowWidth-100)/numSpawn+50,(i+1)*(windowWidth-100)/numSpawn)-50)
+            elif enemyType == "MiniBoss":
+                curEnemy = MiniBoss1(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5])
             enemyGroup.add(curEnemy)
         return (curLevel.spawnWait[levelProgress],(level,levelProgress+1))
 ###Main game
@@ -106,6 +110,8 @@ def CVShooter():
                 cv2.destroyAllWindows()
                 return
         ##Open CV part Start
+        ##Code adapted from https://docs.opencv.org/3.4/df/d9d/tutorial_py_colorspaces.html
+        ##For changing color space and masking
         check, frame = video.read()
         frame = imutils.resize(frame, width=600)
         #Mirrors the frame
@@ -119,7 +125,7 @@ def CVShooter():
         mask = cv2.inRange(csv,lowerRed,higherRed)
         mask = cv2.erode(mask, None, iterations=2)
         mask = cv2.dilate(mask, None, iterations=2)
-        
+        ## Finding contour, code adapted from https://www.pyimagesearch.com/2015/09/14/ball-tracking-with-opencv/
         # find contours in the mask and initialize the current
         # (x, y) center of the ball
         cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
@@ -143,7 +149,7 @@ def CVShooter():
                 cv2.circle(frame, (int(x), int(y)), int(radius),
                     (0, 255, 255), 2)
                 cv2.circle(frame, center, 5, (0, 0, 255), -1)
-        ##Control player with opencv
+        ##Control player with opencv, original code
         if center != None:
             if center[0]>=350 and player.rect.right < windowWidth:
                 player.rect.centerx += player.velocity
