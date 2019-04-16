@@ -6,7 +6,10 @@ import cv2
 import time
 import numpy as np
 import imutils
+from threading import Thread
 from Classes import *
+from Levels import levelConstructor
+
 
 
 windowWidth = 600
@@ -19,8 +22,10 @@ pygame.font.init()
 hpFont = pygame.font.SysFont('Comic Sans MS', 30)
 
 
-        
-### Enemy types
+def spawner(level):
+    #level is a Level class.
+    pass
+    
 ###Main game
 def CVShooter():
     score = 0
@@ -38,9 +43,14 @@ def CVShooter():
     
     shootInterval = 10
     timeUntilShoot = shootInterval
+    ## Wave control
+
+    levels = levelConstructor()
+    ## A level class will be constructed. The level's construction should be done here
     
     #OpenCV setup
     video = cv2.VideoCapture(0)
+### Main Game
     while not gameOver:
         
         window.fill((0,0,0))
@@ -100,7 +110,10 @@ def CVShooter():
         cv2.line(frame, (350,0), (350,600), (0,255,0),2)
         cv2.imshow("Webcame",frame)
         
-        ##Open CV part end
+        ##Open CV part end, Level/Spawner call controlled here
+        
+        
+        
         keys = pygame.key.get_pressed()
         
         if keys[pygame.K_LEFT] and player.rect.left > 0:
@@ -112,7 +125,7 @@ def CVShooter():
             player.exp+=10
             print(player.powerLevel)
         if keys[pygame.K_e] and len(enemyGroup) == 0:
-            enemyGroup.add(Enemy(random.randint(20,580),3,10,20,"Enemy1.png"))
+            enemyGroup.add(Enemy(3,10,20,"Enemy1.png",5))
         
         ### Debug feature end
         shootInterval = 10 - 2*player.update()
@@ -138,6 +151,8 @@ def CVShooter():
                     if enemy.health <= 0:
                         player.exp += enemy.exp
                         enemyGroup.remove(enemy)
+        #TODO: Can implement increased drop rate for struggling players here
+            
         for bullet in enemyBulletGroup:
             bullet.move()
             if bullet.rect.colliderect(player.rect):
@@ -157,7 +172,8 @@ def CVShooter():
         enemyBulletGroup.draw(window)
         playerHP = hpFont.render("Health: "+ str(player.health),False, (255,255,255))
         window.blit(playerHP,(20,windowHeight-50))
-        
+        playerEXP = hpFont.render("EXP: "+ str(player.exp) + "/100",False, (255,255,255))
+        window.blit(playerEXP,(420,windowHeight-50))
         
         pygame.display.update()
         clock.tick(gameSpeed)
@@ -166,3 +182,6 @@ def CVShooter():
     pygame.quit()
 
 CVShooter()
+
+# t1 = Thread(target = CVShooter)
+# t1.start()
