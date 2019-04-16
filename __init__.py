@@ -6,7 +6,7 @@ import cv2
 import time
 import numpy as np
 import imutils
-from threading import Thread
+import copy
 from Classes import *
 from Levels import levelConstructor
 
@@ -21,11 +21,39 @@ gameSpeed = 30
 pygame.font.init()
 hpFont = pygame.font.SysFont('Comic Sans MS', 30)
 
-
-def spawner(level):
-    #level is a Level class.
-    pass
-    
+def spawn(enemyGroup,levels,curLevelProgress):
+    level = curLevelProgress[0]
+    curLevel = levels[level-1]
+    levelProgress = curLevelProgress[1]
+    #Level is the level object, progress is an interger for indexing into list
+    if levelProgress == len(curLevel.enemyList)-1:
+        #Spawn for the last time and return level += 1, set progress to 0
+        numSpawn = curLevel.spawnAmount[levelProgress]
+        for i in range(numSpawn):
+            enemySpec = curLevel.enemyList[levelProgress]
+            enemyType = enemySpec[0]
+            if enemyType == "Normal":
+                curEnemy = Enemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
+                                        random.randint(i*windowWidth/numSpawn,(i+1)*windowWidth/numSpawn))
+            elif enemyType == "Moving":
+                curEnemy = MoveEnemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
+                                    random.randint(i*(windowWidth-100)/numSpawn+50,(i+1)*(windowWidth-100)/numSpawn)-50)
+            enemyGroup.add(curEnemy)
+        return (curLevel.spawnWait[levelProgress],(level+1,0))
+    else:
+        #Spawn and increment progress by 1
+        numSpawn = curLevel.spawnAmount[levelProgress]
+        for i in range(numSpawn):
+            enemySpec = curLevel.enemyList[levelProgress]
+            enemyType = enemySpec[0]
+            if enemyType == "Normal":
+                curEnemy = Enemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
+                                        random.randint(i*windowWidth/numSpawn,(i+1)*windowWidth/numSpawn))
+            elif enemyType == "Moving":
+                curEnemy = MoveEnemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
+                                    random.randint(i*(windowWidth-100)/numSpawn+50,(i+1)*(windowWidth-100)/numSpawn)-50)
+            enemyGroup.add(curEnemy)
+        return (curLevel.spawnWait[levelProgress],(level,levelProgress+1))
 ###Main game
 def CVShooter():
     score = 0
@@ -44,8 +72,14 @@ def CVShooter():
     shootInterval = 10
     timeUntilShoot = shootInterval
     ## Wave control
-
+    
+    
+    spawnInterval = 20
+    # A list of Level Objects
     levels = levelConstructor()
+    #This is a tuple of current level and the progress of the level.
+    curLevelProgress = (1,0)
+    
     ## A level class will be constructed. The level's construction should be done here
     
     #OpenCV setup
@@ -53,6 +87,16 @@ def CVShooter():
 ### Main Game
     while not gameOver:
         
+        spawnInterval -= 1
+        if (spawnInterval <= 0) and (curLevelProgress[0] <= len(levels)):
+            spawnInterval,curLevelProgress = spawn(enemyGroup,levels,curLevelProgress)
+            print(spawnInterval)
+        elif curLevelProgress[0] > len(levels) and len(enemyGroup) == 0:
+            print("Currently ended")
+            video.release()
+            cv2.destroyAllWindows()
+            pygame.quit()
+            return
         window.fill((0,0,0))
 
         for event in pygame.event.get():
@@ -104,10 +148,15 @@ def CVShooter():
             if center[0]>=350 and player.rect.right < windowWidth:
                 player.rect.centerx += player.velocity
             elif center[0]<=250 and player.rect.left > 0:
-
                 player.rect.centerx -= player.velocity
+            if center[1] >= 250 and player.rect.bottom <= windowHeight:
+                player.rect.centery += player.velocity
+            elif center[1] <= 175 and player.rect.top >= 0:
+                player.rect.centery -= player.velocity
         cv2.line(frame, (250,0), (250,600), (0,255,0),2)
         cv2.line(frame, (350,0), (350,600), (0,255,0),2)
+        cv2.line(frame, (0,250), (600,250), (0,255,0),2)
+        cv2.line(frame, (0,175), (600,175), (0,255,0),2)
         cv2.imshow("Webcame",frame)
         
         ##Open CV part end, Level/Spawner call controlled here
@@ -151,12 +200,16 @@ def CVShooter():
                     if enemy.health <= 0:
                         player.exp += enemy.exp
                         enemyGroup.remove(enemy)
+                        
         #TODO: Can implement increased drop rate for struggling players here
             
         for bullet in enemyBulletGroup:
             bullet.move()
             if bullet.rect.colliderect(player.rect):
-                player.health-=1
+                if player.invincible == False:
+                    player.health-=1
+                    player.invincible = True
+                    player.invincibleTimer = 50
                 enemyBulletGroup.remove(bullet)
             if bullet.rect.centerx >= windowWidth+10 or bullet.rect.centerx <= -10:
                 enemyBulletGroup.remove(bullet)
@@ -174,14 +227,11 @@ def CVShooter():
         window.blit(playerHP,(20,windowHeight-50))
         playerEXP = hpFont.render("EXP: "+ str(player.exp) + "/100",False, (255,255,255))
         window.blit(playerEXP,(420,windowHeight-50))
-        
         pygame.display.update()
         clock.tick(gameSpeed)
     video.release()
     cv2.destroyAllWindows()
     pygame.quit()
+    return
 
 CVShooter()
-
-# t1 = Thread(target = CVShooter)
-# t1.start()

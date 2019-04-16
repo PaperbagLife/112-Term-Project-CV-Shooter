@@ -1,19 +1,26 @@
 import pygame
 import os
 import random
+import math
  
 class Player(pygame.sprite.Sprite):
     #player ship, has a powerLevel for the bullets, which is leveled up through
     #gaining exp
-    def __init__(self,x,y,health=10,powerLevel=1,exp=0):
+    def __init__(self,x,y,health=20,powerLevel=1,exp=0):
         pygame.sprite.Sprite.__init__(self)
         self.health = health
         self.powerLevel = powerLevel
         self.exp = exp
-        self.image = pygame.image.load(os.path.join('Assets',
-                                        'Player','player.png')).convert()
+        self.normalImage = pygame.image.load(os.path.join('Assets',
+                                        'Player','playerNew.png')).convert()
+        self.hurtImage = pygame.image.load(os.path.join('Assets',
+                                        'Player','playerHurt.png')).convert()
+        self.normalImage.set_colorkey((102,204,255))
+        self.hurtImage.set_colorkey((205,67,112))
+        self.image = self.normalImage
         self.rect = self.image.get_rect()
-        self.image.set_colorkey((0,0,0))
+        self.invincibleTimer = 0
+        self.invincible = False
         self.rect.centerx = x
         self.rect.centery = y
         self.velocity = 10
@@ -21,6 +28,15 @@ class Player(pygame.sprite.Sprite):
         if self.exp >= 100 and self.powerLevel < 3:
             self.powerLevel += 1
             self.exp = 0
+        if self.invincibleTimer > 0:
+            self.invincibleTimer -= 1
+            if self.invincibleTimer %5 >= 2:
+                self.image = self.hurtImage
+            else:
+                self.image = self.normalImage
+        if self.invincibleTimer <= 0 and self.invincible:
+            self.invincible = False
+            self.image = self.normalImage
         return self.powerLevel
     def shoot(self,playerBulletGroup):
         if self.powerLevel == 1:
@@ -82,6 +98,18 @@ class Enemy(pygame.sprite.Sprite):
             self.timer = self.shootTimer
     def move(self):
         self.rect.centery += self.velocity
+        
+class MoveEnemy(Enemy):
+    def __init__(self,health,exp,shootTimer,filePath,velocity,x = None):
+        super().__init__(health,exp,shootTimer,filePath,velocity,x = None)
+        self.cosCounter = 0
+    def move(self):
+        self.rect.centery += self.velocity
+        self.cosCounter = (self.cosCounter+1)%200
+        ##20 is one cycle of cos
+        self.rect.centerx += 2*self.velocity*math.cos(self.cosCounter/200*2*math.pi)
+    
+    
 class EnemyStraightBullet(pygame.sprite.Sprite):
     def __init__(self,x,y,direction):
         pygame.sprite.Sprite.__init__(self)
@@ -97,14 +125,11 @@ class EnemyStraightBullet(pygame.sprite.Sprite):
         self.rect.centery += 8*self.direction[1]
         
 class Level(object):
-    #This level class contains 3 parrallel lists, monsterList,spawnAmount
-    #and spawnWait. The same index indicates the monster should be spawned that many times
-    #And the spawnWait is the interval between spawns. If the interval is None,
-    #It means it should spawn as soon as the next monster comes up.
+    #This level class contains enemies in order, and the spawn wait time between them.
     def __init__(self, enemyList,spawnAmount,spawnWait,level):
         self.enemyList = enemyList
-        self.spawnAmount = spawnAmount
         self.spawnWait = spawnWait #The last element of this list should be the timer between levels.
+        self.spawnAmount = spawnAmount
         self.level = level
     def __repr__(self):
         return self.level
