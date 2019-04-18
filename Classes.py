@@ -71,11 +71,15 @@ class PlayerBullet(pygame.sprite.Sprite):
     def move(self):
         self.rect.centery -= self.velocity
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self,health,exp,shootTimer,filePath,velocity,x = None):
+    def __init__(self,health,exp,shootTimer,filePath,velocity,x = None, size = (80,80)):
         pygame.sprite.Sprite.__init__(self)
         self.health = health
         self.exp = exp
-        self.image = pygame.image.load(os.path.join('Assets','Enemies',filePath)).convert()
+        if size != None:
+            self.image = pygame.transform.scale(pygame.image.load\
+                    (os.path.join('Assets','Enemies',filePath)).convert(),size)
+        else:
+            self.image = pygame.image.load(os.path.join('Assets','Enemies',filePath)).convert()
         self.rect = self.image.get_rect()
         self.image.set_colorkey((0,0,0))
         if x != None:
@@ -111,7 +115,7 @@ class MoveEnemy(Enemy):
     
 class MiniBoss1(Enemy):
     def __init__(self,health,exp,shootTimer,filePath,velocity,x = None):
-        super().__init__(health,exp,shootTimer,filePath,velocity,x = 300)
+        super().__init__(health,exp,shootTimer,filePath,velocity,x = 300, size = None)
         self.rect.bottom = 0
         self.moveRight = True
         self.type1Shots = 5
@@ -122,8 +126,10 @@ class MiniBoss1(Enemy):
             if attackType == 1:
                 direction = (0,-1)
                 for i in range(self.type1Shots+1):
-                    xVel = (-3**0.5)*math.cos(math.pi*2/3/(self.type1Shots)*i)-(-math.sin(math.pi*2/3/(self.type1Shots)*i))
-                    yVel = (-3**0.5)*math.sin(math.pi*2/3/(self.type1Shots)*i)+(-math.cos(math.pi*2/3/(self.type1Shots)*i))
+                    xVel = (-3**0.5)*math.cos(math.pi*2/3/(self.type1Shots)*i)-\
+                                (-math.sin(math.pi*2/3/(self.type1Shots)*i))
+                    yVel = (-3**0.5)*math.sin(math.pi*2/3/(self.type1Shots)*i)+\
+                                (-math.cos(math.pi*2/3/(self.type1Shots)*i))
                     direction = (xVel,-yVel)
                     bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
                     enemyBulletGroup.add(bullet)

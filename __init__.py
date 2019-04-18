@@ -10,8 +10,6 @@ import copy
 from Classes import *
 from Levels import levelConstructor
 
-
-
 windowWidth = 600
 windowHeight = 800
 window = pygame.display.set_mode((windowWidth,windowHeight))
@@ -38,7 +36,8 @@ def spawn(enemyGroup,levels,curLevelProgress):
                                         random.randint(i*windowWidth/numSpawn,(i+1)*windowWidth/numSpawn))
             elif enemyType == "Moving":
                 curEnemy = MoveEnemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
-                                    random.randint(i*(windowWidth-100)/numSpawn+50,(i+1)*(windowWidth-100)/numSpawn)-50)
+                                    random.randint(i*(windowWidth-100)/numSpawn+50,
+                                                        (i+1)*(windowWidth-100)/numSpawn)-50)
             elif enemyType == "MiniBoss":
                 curEnemy = MiniBoss1(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5])
             enemyGroup.add(curEnemy)
@@ -55,7 +54,8 @@ def spawn(enemyGroup,levels,curLevelProgress):
                                         random.randint(i*windowWidth/numSpawn,(i+1)*windowWidth/numSpawn))
             elif enemyType == "Moving":
                 curEnemy = MoveEnemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
-                                    random.randint(i*(windowWidth-100)/numSpawn+50,(i+1)*(windowWidth-100)/numSpawn)-50)
+                                    random.randint(i*(windowWidth-100)/numSpawn+50,
+                                                                (i+1)*(windowWidth-100)/numSpawn)-50)
             elif enemyType == "MiniBoss":
                 curEnemy = MiniBoss1(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5])
             enemyGroup.add(curEnemy)
