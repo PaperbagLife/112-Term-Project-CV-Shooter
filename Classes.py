@@ -24,7 +24,14 @@ class Player(pygame.sprite.Sprite):
         self.rect.centerx = x
         self.rect.centery = y
         self.velocity = 10
-    def update(self):
+        ## Get a measure of the user's performance based on health lost in last 20 seconds.
+        #Change enemy shootTimer to higher based on the performance.
+        #Performance highest is 0, lowest is 50
+        self.performance = 0
+        self.prevHealth = self.health
+        self.performanceTimer = 500 #Around 20 seconds
+        self.deltHealth = 0
+    def update(self,enemyBulletGroup):
         if self.exp >= 100 and self.powerLevel < 3:
             self.powerLevel += 1
             self.exp = 0
@@ -37,7 +44,17 @@ class Player(pygame.sprite.Sprite):
         if self.invincibleTimer <= 0 and self.invincible:
             self.invincible = False
             self.image = self.normalImage
-        return self.powerLevel
+        self.performanceTimer -= 1
+        if self.performanceTimer <= 0:
+            self.deltHealth = self.prevHealth - self.health
+            #Determining performance by number of bullets on screen and health lost
+            bulletOnScreen = len(enemyBulletGroup)
+            if bulletOnScreen!=0:
+                self.performance = 50*(self.deltHealth/bulletOnScreen)
+            else:
+                self.performance = 10*self.deltHealth
+            self.performanceTimer = 500
+            print("Performance: ",self.performance)
     def shoot(self,playerBulletGroup):
         if self.powerLevel == 1:
             bullet = PlayerBullet(self.rect.midtop[0],
@@ -87,8 +104,10 @@ class Enemy(pygame.sprite.Sprite):
         else:
             self.rect.centerx = random.randint(50,550)
         self.rect.centery = -20
+        self.baseShootTimer = shootTimer
         self.shootTimer = shootTimer
         self.timer = shootTimer
+        self.baseVelocity = velocity
         self.velocity = velocity
     def shoot(self,enemyBulletGroup,player):
         self.timer -= 1
@@ -102,7 +121,11 @@ class Enemy(pygame.sprite.Sprite):
             self.timer = self.shootTimer
     def move(self):
         self.rect.centery += self.velocity
+    def update(self,playerPerformance):
+        self.shootTimer = self.baseShootTimer + playerPerformance
+        self.velocity = self.baseVelocity - 0.005*playerPerformance
         
+    
 class MoveEnemy(Enemy):
     def __init__(self,health,exp,shootTimer,filePath,velocity,x = None):
         super().__init__(health,exp,shootTimer,filePath,velocity,x = None)
@@ -168,6 +191,19 @@ class EnemyStraightBullet(pygame.sprite.Sprite):
     def move(self):
         self.rect.centerx += 8*self.direction[0]
         self.rect.centery += 8*self.direction[1]
+        
+class Repair(pygame.sprite.Sprite):
+    def __init__(self,x,y,direction):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(os.path.join('Assets','PowerUps',
+                            'repair.png')).convert()
+        self.image.set_colorkey((0,0,0))
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x
+        self.rect.centery = y
+    def move(self):
+        self.rect.centery += 1
+        
         
 class Level(object):
     #This level class contains enemies in order, and the spawn wait time between them.

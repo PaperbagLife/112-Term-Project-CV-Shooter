@@ -66,6 +66,7 @@ def CVShooter():
     gameOver = False
     
     
+    
     #Sprite Group for drawing player only
     playerSpriteGroup = pygame.sprite.Group() 
     player = Player(windowWidth//2,windowHeight - 80)
@@ -74,6 +75,7 @@ def CVShooter():
     playerBulletGroup = pygame.sprite.Group()
     enemyGroup = pygame.sprite.Group()
     enemyBulletGroup = pygame.sprite.Group()
+    powerUpGroup = pygame.sprite.Group()
     
     shootInterval = 10
     timeUntilShoot = shootInterval
@@ -89,14 +91,17 @@ def CVShooter():
     
     #OpenCV setup
     video = cv2.VideoCapture(0)
+    
+    
+    testCounter = 500
+    testTimer = time.time()
+    
 ### Main Game
     while not gameOver:
-        
         spawnInterval -= 1
         ##handles spawning here
         if (spawnInterval <= 0) and (curLevelProgress[0] <= len(levels)):
             spawnInterval,curLevelProgress = spawn(enemyGroup,levels,curLevelProgress)
-            print(spawnInterval,curLevelProgress)
         elif curLevelProgress[0] > len(levels) and len(enemyGroup) == 0:
             print("Currently ended")
             video.release()
@@ -183,7 +188,8 @@ def CVShooter():
             enemyGroup.add(Enemy(3,10,20,"Enemy1.png",5))
         
         ### Debug feature end
-        shootInterval = 10 - 2*player.update()
+        player.update(enemyBulletGroup)
+        shootInterval = 10 - 2*player.powerLevel
         if timeUntilShoot <= 0:
             player.shoot(playerBulletGroup)
             timeUntilShoot = shootInterval
@@ -196,6 +202,7 @@ def CVShooter():
                 playerBulletGroup.remove(bullet)
         for enemy in enemyGroup:
             enemy.move()
+            enemy.update(player.performance)
             enemy.shoot(enemyBulletGroup,player)
             if enemy.rect.top >= windowHeight + 5:
                 enemyGroup.remove(enemy)
@@ -211,7 +218,7 @@ def CVShooter():
                     player.health-=1
                     player.invincible = True
                     player.invincibleTimer = 50
-                        
+                    # spawnPowerUp(player,powerUpGroup)
         #TODO: Can implement increased drop rate for struggling players here
             
         for bullet in enemyBulletGroup:
