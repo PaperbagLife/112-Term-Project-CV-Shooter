@@ -24,6 +24,7 @@ hpFont = pygame.font.SysFont('Comic Sans MS', 30)
 def spawn(enemyGroup,levels,curLevelProgress):
     level = curLevelProgress[0]
     curLevel = levels[level-1]
+    print(curLevel)
     levelProgress = curLevelProgress[1]
     #Level is the level object, progress is an interger for indexing into list
     if levelProgress == len(curLevel.enemyList)-1:
@@ -41,6 +42,7 @@ def spawn(enemyGroup,levels,curLevelProgress):
             elif enemyType == "MiniBoss":
                 curEnemy = MiniBoss1(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5])
             enemyGroup.add(curEnemy)
+        print("end of level")
         return (curLevel.spawnWait[levelProgress],(level+1,0))
     else:
         #Spawn and increment progress by 1
@@ -84,7 +86,6 @@ def CVShooter():
     #This is a tuple of current level and the progress of the level.
     curLevelProgress = (1,0)
     
-    ## A level class will be constructed. The level's construction should be done here
     
     #OpenCV setup
     video = cv2.VideoCapture(0)
@@ -92,9 +93,10 @@ def CVShooter():
     while not gameOver:
         
         spawnInterval -= 1
+        ##handles spawning here
         if (spawnInterval <= 0) and (curLevelProgress[0] <= len(levels)):
             spawnInterval,curLevelProgress = spawn(enemyGroup,levels,curLevelProgress)
-            print(spawnInterval)
+            print(spawnInterval,curLevelProgress)
         elif curLevelProgress[0] > len(levels) and len(enemyGroup) == 0:
             print("Currently ended")
             video.release()
@@ -165,9 +167,7 @@ def CVShooter():
         cv2.line(frame, (0,175), (600,175), (0,255,0),2)
         cv2.imshow("Webcame",frame)
         
-        ##Open CV part end, Level/Spawner call controlled here
-        
-        
+        ##Open CV part end
         
         keys = pygame.key.get_pressed()
         
@@ -206,6 +206,11 @@ def CVShooter():
                     if enemy.health <= 0:
                         player.exp += enemy.exp
                         enemyGroup.remove(enemy)
+            if enemy.rect.colliderect(player.rect):
+                if player.invincible == False:
+                    player.health-=1
+                    player.invincible = True
+                    player.invincibleTimer = 50
                         
         #TODO: Can implement increased drop rate for struggling players here
             

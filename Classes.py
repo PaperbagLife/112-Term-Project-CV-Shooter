@@ -51,11 +51,11 @@ class Player(pygame.sprite.Sprite):
             playerBulletGroup.add(bullet1,bullet2)
         elif self.powerLevel == 3:
             bulletMid = PlayerBullet(self.rect.midtop[0],
-                                            self.rect.midtop[1],self.powerLevel)
+                                            self.rect.midtop[1],self.powerLevel-1)
             bulletLeft = PlayerBullet(self.rect.midtop[0]-20,
-                                            self.rect.midtop[1]-20,self.powerLevel)
+                                            self.rect.midtop[1]-20,self.powerLevel-1)
             bulletRight = PlayerBullet(self.rect.midtop[0]+20,
-                                            self.rect.midtop[1]-20,self.powerLevel)
+                                            self.rect.midtop[1]-20,self.powerLevel-1)
             playerBulletGroup.add(bulletMid,bulletLeft,bulletRight)
 class PlayerBullet(pygame.sprite.Sprite):
     def __init__(self,x,y,power):
@@ -75,7 +75,7 @@ class Enemy(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.health = health
         self.exp = exp
-        self.image = pygame.transform.scale(pygame.image.load(os.path.join('Assets','Enemies',filePath)).convert(),(80,85))
+        self.image = pygame.image.load(os.path.join('Assets','Enemies',filePath)).convert()
         self.rect = self.image.get_rect()
         self.image.set_colorkey((0,0,0))
         if x != None:
@@ -114,15 +114,30 @@ class MiniBoss1(Enemy):
         super().__init__(health,exp,shootTimer,filePath,velocity,x = 300)
         self.rect.bottom = 0
         self.moveRight = True
+        self.type1Shots = 5
     def shoot(self,enemyBulletGroup,player):
         self.timer -= 1
         if self.timer <= 0:
-            direction = (0,-1)
-            for i in range(3): 
-                direction = [(-(1/(2**0.5)),1/(2**0.5)),(0,1),((1/(2**0.5)),1/(2**0.5))]
-                bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction[i])
-                enemyBulletGroup.add(bullet)
-            self.timer = self.shootTimer
+            attackType = random.choice([1,2])
+            if attackType == 1:
+                direction = (0,-1)
+                for i in range(self.type1Shots+1):
+                    xVel = (-3**0.5)*math.cos(math.pi*2/3/(self.type1Shots)*i)-(-math.sin(math.pi*2/3/(self.type1Shots)*i))
+                    yVel = (-3**0.5)*math.sin(math.pi*2/3/(self.type1Shots)*i)+(-math.cos(math.pi*2/3/(self.type1Shots)*i))
+                    direction = (xVel,-yVel)
+                    bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+                    enemyBulletGroup.add(bullet)
+                self.timer = self.shootTimer
+            elif attackType == 2:
+                gunPos = [self.rect.bottomleft,self.rect.midbottom,self.rect.bottomright]
+                for gunPosition in gunPos:
+                    deltX = player.rect.centerx - gunPosition[0]
+                    deltY = player.rect.centery - gunPosition[1]
+                    mag = (deltX**2 + deltY**2)**0.5
+                    direction = (deltX/mag, deltY/mag)
+                    bullet = EnemyStraightBullet(gunPosition[0],gunPosition[1]-10,direction)
+                    enemyBulletGroup.add(bullet)
+                self.timer = self.shootTimer
     def move(self):
         if self.rect.top <= 0:
             self.rect.centery += self.velocity
@@ -156,5 +171,5 @@ class Level(object):
         self.spawnAmount = spawnAmount
         self.level = level
     def __repr__(self):
-        return self.level
+        return str(self.level)
     
