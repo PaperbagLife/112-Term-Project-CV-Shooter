@@ -242,12 +242,12 @@ class Button(pygame.sprite.Sprite):
         if self.rect.left <= mousePos[0] <= self.rect.right and\
                             self.rect.top <= mousePos[1] <= self.rect.bottom:
             self.image = self.hoverImage
-            
+            if click[0]:
+                print("click")
+                self.action()
         else:
             self.image = self.normalImage
         
-        if click[0]:
-            print("click")
-            self.action()
+        
         
         
