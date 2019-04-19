@@ -9,7 +9,7 @@ def levelConstructor():
     # Argument = health,exp,shootTimer,filePath,velocity,x = None
     levels = []
     enemy1 = ("Normal",3,10,50,"Enemy1.png",1.5)
-    enemy2 = ("Normal",7,15,40,"Enemy2.png",1)
+    enemy2 = ("Normal",7,15,40,"Enemy2.png",2)
     enemy3 = ("Moving",7,15,50,"Enemy3.png",1.5)
     miniBoss1 = ("MiniBoss", 500, 100, 30,"miniBoss.png",3)
     lv1EnemyList = [enemy1,enemy3,enemy2,enemy3,enemy1,enemy2,enemy2]

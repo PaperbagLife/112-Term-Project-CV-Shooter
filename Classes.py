@@ -50,9 +50,7 @@ class Player(pygame.sprite.Sprite):
             #Determining performance by number of bullets on screen and health lost
             bulletOnScreen = len(enemyBulletGroup)
             if bulletOnScreen!=0:
-                self.performance = 50*(self.deltHealth/bulletOnScreen)
-            else:
-                self.performance = 10*self.deltHealth
+                self.performance = 50*(self.deltHealth/(bulletOnScreen+10))
             self.performanceTimer = 500
             print("Performance: ",self.performance)
     def shoot(self,playerBulletGroup):
@@ -177,6 +175,8 @@ class MiniBoss1(Enemy):
                 self.rect.centerx += self.velocity
             else:
                 self.rect.centerx -= self.velocity
+    def update(self,playerPerformance):
+        self.shootTimer = self.baseShootTimer + playerPerformance
         
 class EnemyStraightBullet(pygame.sprite.Sprite):
     def __init__(self,x,y,direction):
@@ -193,17 +193,16 @@ class EnemyStraightBullet(pygame.sprite.Sprite):
         self.rect.centery += 8*self.direction[1]
         
 class Repair(pygame.sprite.Sprite):
-    def __init__(self,x,y,direction):
+    def __init__(self,x,y):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load(os.path.join('Assets','PowerUps',
-                            'repair.png')).convert()
+        self.image = pygame.transform.scale(pygame.image.load(os.path.join('Assets','PowerUps',
+                            'repair.png')).convert(),(50,50))
         self.image.set_colorkey((0,0,0))
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.centery = y
     def move(self):
-        self.rect.centery += 1
-        
+        self.rect.centery += 5
         
 class Level(object):
     #This level class contains enemies in order, and the spawn wait time between them.
@@ -215,3 +214,40 @@ class Level(object):
     def __repr__(self):
         return str(self.level)
     
+    
+class Background(pygame.sprite.Sprite):
+    def __init__(self,filePath):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(os.path.join('Assets','Background',filePath)).convert()
+        self.rect = self.image.get_rect()
+        self.rect.left = 0
+        self.rect.bottom = 800
+    def move(self):
+        self.rect.centery += 1
+        if self.rect.top >= 0:
+            self.rect.bottom = 800
+        
+class Button(pygame.sprite.Sprite):
+    def __init__(self,x,y,filePath1,filePath2,action):
+        pygame.sprite.Sprite.__init__(self)
+        self.normalImage = pygame.image.load(os.path.join('Assets','Background',filePath1)).convert()
+        self.hoverImage = pygame.image.load(os.path.join('Assets','Background',filePath2)).convert()
+        self.image = pygame.image.load(os.path.join('Assets','Background',filePath1)).convert()
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x
+        self.rect.centery = y
+        self.action = action
+    def update(self,mousePos,click):
+        
+        if self.rect.left <= mousePos[0] <= self.rect.right and\
+                            self.rect.top <= mousePos[1] <= self.rect.bottom:
+            self.image = self.hoverImage
+            
+        else:
+            self.image = self.normalImage
+        
+        if click[0]:
+            print("click")
+            self.action()
+        
+        

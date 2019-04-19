@@ -16,13 +16,13 @@ window = pygame.display.set_mode((windowWidth,windowHeight))
 clock = pygame.time.Clock()
 gameSpeed = 30
 
+
 pygame.font.init()
 hpFont = pygame.font.SysFont('Comic Sans MS', 30)
 
 def spawn(enemyGroup,levels,curLevelProgress):
     level = curLevelProgress[0]
     curLevel = levels[level-1]
-    print(curLevel)
     levelProgress = curLevelProgress[1]
     #Level is the level object, progress is an interger for indexing into list
     if levelProgress == len(curLevel.enemyList)-1:
@@ -60,7 +60,39 @@ def spawn(enemyGroup,levels,curLevelProgress):
                 curEnemy = MiniBoss1(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5])
             enemyGroup.add(curEnemy)
         return (curLevel.spawnWait[levelProgress],(level,levelProgress+1))
+        
+def spawnPowerUp(player,powerUpGroup,enemyPos):
+    powerUpType = random.choice(["repair"])
+    if powerUpType == "repair":
+        repair = Repair(enemyPos[0],enemyPos[1])
+        powerUpGroup.add(repair)
+    
+    
+    
 ###Main game
+def titleScreen():
+    bgGroup = pygame.sprite.Group()
+    bgGroup.add(Background("TitleScreen.png"))
+    bgGroup.draw(window)
+    buttonGroup = pygame.sprite.Group()
+    buttonGroup.add(Button(windowWidth//2, windowHeight//2,"StartGame.png","StartGame2.png",CVShooter))
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        for button in buttonGroup:
+            button.update(mouse,click)
+        buttonGroup.draw(window)
+        pygame.display.update()
+        
+def tutorial():
+    pass
+        
+        
+
 def CVShooter():
     score = 0
     gameOver = False
@@ -76,6 +108,11 @@ def CVShooter():
     enemyGroup = pygame.sprite.Group()
     enemyBulletGroup = pygame.sprite.Group()
     powerUpGroup = pygame.sprite.Group()
+    backgroundGroup = pygame.sprite.Group()
+    
+    background = Background("Background.png")
+    backgroundGroup.add(background)
+    
     
     shootInterval = 10
     timeUntilShoot = shootInterval
@@ -98,6 +135,7 @@ def CVShooter():
     
 ### Main Game
     while not gameOver:
+        background.move()
         spawnInterval -= 1
         ##handles spawning here
         if (spawnInterval <= 0) and (curLevelProgress[0] <= len(levels)):
@@ -212,13 +250,15 @@ def CVShooter():
                     enemy.health -= bullet.power
                     if enemy.health <= 0:
                         player.exp += enemy.exp
+                        if (random.randint(int(player.performance),100) >= 80):
+                            spawnPowerUp(player,powerUpGroup,enemy.rect.center)
                         enemyGroup.remove(enemy)
             if enemy.rect.colliderect(player.rect):
                 if player.invincible == False:
                     player.health-=1
                     player.invincible = True
                     player.invincibleTimer = 50
-                    # spawnPowerUp(player,powerUpGroup)
+
         #TODO: Can implement increased drop rate for struggling players here
             
         for bullet in enemyBulletGroup:
@@ -233,17 +273,28 @@ def CVShooter():
                 enemyBulletGroup.remove(bullet)
             if bullet.rect.centery >= windowHeight+10 or bullet.rect.centery <= -10:
                 enemyBulletGroup.remove(bullet)
+        for powerUp in powerUpGroup:
+            powerUp.move()
+            if powerUp.rect.colliderect(player.rect):
+                if isinstance(powerUp,Repair):
+                    player.health += int(3 + player.performance//10)
+                powerUpGroup.remove(powerUp)
         if player.health <= 0:
             #Explosion effect and gameOver screen
             gameOver = True
         ##Drawing and updating for sprite group
+        backgroundGroup.draw(window)
         playerSpriteGroup.draw(window)
         playerBulletGroup.draw(window)
         enemyGroup.draw(window)
         enemyBulletGroup.draw(window)
+        powerUpGroup.draw(window)
         playerHP = hpFont.render("Health: "+ str(player.health),False, (255,255,255))
         window.blit(playerHP,(20,windowHeight-50))
-        playerEXP = hpFont.render("EXP: "+ str(player.exp) + "/100",False, (255,255,255))
+        if player.powerLevel == 3:
+            playerEXP = hpFont.render("Max EXP",False, (255,255,255))
+        else:
+            playerEXP = hpFont.render("EXP: "+ str(player.exp) + "/100",False, (255,255,255))
         window.blit(playerEXP,(420,windowHeight-50))
         pygame.display.update()
         clock.tick(gameSpeed)
@@ -252,4 +303,4 @@ def CVShooter():
     pygame.quit()
     return
 
-CVShooter()
+titleScreen()
