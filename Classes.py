@@ -314,3 +314,50 @@ class TeamEnemy(pygame.sprite.Sprite):
             bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
             self.shootTimer = self.shootInterval
             enemyBulletGroup.add(bullet)
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self,x,y,scale):
+        pygame.sprite.Sprite.__init__(self)
+        ex1 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Enemies','Explosions','1.png')).convert(),scale)
+        ex1.set_colorkey((0,0,0))
+        ex2 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Enemies','Explosions','2.png')).convert(),scale)
+        ex2.set_colorkey((0,0,0))
+        ex3 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Enemies','Explosions','3.png')).convert(),scale)
+        ex3.set_colorkey((0,0,0))
+        ex4 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Enemies','Explosions','4.png')).convert(),scale)
+        ex4.set_colorkey((0,0,0))
+        ex5 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Enemies','Explosions','5.png')).convert(),scale)
+        ex5.set_colorkey((0,0,0))
+        ex6 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Enemies','Explosions','6.png')).convert(),scale)
+        ex6.set_colorkey((0,0,0))
+        ex7 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Enemies','Explosions','7.png')).convert(),scale)
+        ex7.set_colorkey((0,0,0))
+        ex8 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Enemies','Explosions','8.png')).convert(),scale)
+        ex8.set_colorkey((0,0,0))
+        self.image = ex1
+        self.images = [ex1,ex2,ex3,ex4,ex5,ex6,ex7,ex8]
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x
+        self.rect.centery = y
+        self.count = 0
+        self.timeInt = 5
+    def update(self):
+        self.timeInt -= 1
+        if self.timeInt <= 0:
+            self.count += 1
+            self.timeInt = 5
+        if self.count < len(self.images):
+            self.image = self.images[self.count]
+        #Return True if it needs to be destroyed, ie reached the end of explosion
+        return self.count == len(self.images)
+        
+        
+        
+        

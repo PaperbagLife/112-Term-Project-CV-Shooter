@@ -59,7 +59,10 @@ def spawnPowerUp(player,powerUpGroup,enemyPos):
         repair = Repair(enemyPos[0],enemyPos[1])
         powerUpGroup.add(repair)
     
-    
+def explode(x,y,scale,explosionGroup):
+    curExplosion = Explosion(x,y,scale)
+    explosionGroup.add(curExplosion)
+
 ###Main game
 def titleScreen():
     bgGroup = pygame.sprite.Group()
@@ -188,6 +191,7 @@ def CVShooter():
     playerBulletGroup = pygame.sprite.Group()
     enemyGroup = pygame.sprite.Group()
     enemyBulletGroup = pygame.sprite.Group()
+    explosionGroup = pygame.sprite.Group()
     powerUpGroup = pygame.sprite.Group()
     backgroundGroup = pygame.sprite.Group()
     teamEnemyGroup = pygame.sprite.Group()
@@ -343,15 +347,14 @@ def CVShooter():
                         player.exp += enemy.exp
                         if (random.randint(int(player.performance),100) >= 80):
                             spawnPowerUp(player,powerUpGroup,enemy.rect.center)
+                        explode(enemy.rect.centerx,enemy.rect.centery,enemy.rect.size,explosionGroup)
                         enemyGroup.remove(enemy)
             if enemy.rect.colliderect(player.rect):
                 if player.invincible == False:
                     player.health-=1
                     player.invincible = True
                     player.invincibleTimer = 50
-
-        #TODO: Can implement increased drop rate for struggling players here
-            
+    
         for bullet in enemyBulletGroup:
             bullet.move()
             if bullet.rect.colliderect(player.rect):
@@ -387,8 +390,11 @@ def CVShooter():
                         player.exp += teamEnemy.exp
                         if (random.randint(int(player.performance),100) >= 80):
                             spawnPowerUp(player,powerUpGroup,teamEnemy.rect.center)
+                        explode(teamEnemy.rect.centerx,teamEnemy.rect.centery,teamEnemy.rect.size,explosionGroup)
                         teamEnemyGroup.remove(teamEnemy)
-                
+        for explosion in explosionGroup:
+            if explosion.update():
+                explosionGroup.remove(explosion)
         if player.health <= 0:
             #Explosion effect and gameOver screen
             gameOver = True
@@ -400,6 +406,7 @@ def CVShooter():
         teamEnemyGroup.draw(window)
         enemyBulletGroup.draw(window)
         powerUpGroup.draw(window)
+        explosionGroup.draw(window)
         playerHP = hpFont.render("Health: "+ str(player.health),False, (255,255,255))
         window.blit(playerHP,(20,windowHeight-50))
         if player.powerLevel == 3:
@@ -412,5 +419,5 @@ def CVShooter():
     video.release()
     cv2.destroyAllWindows()
     return
-
-titleScreen()
+CVShooter()
+# titleScreen()
