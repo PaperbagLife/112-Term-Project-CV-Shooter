@@ -29,7 +29,7 @@ class Player(pygame.sprite.Sprite):
         #Performance highest is 0, lowest is 50
         self.performance = 0
         self.prevHealth = self.health
-        self.performanceTimer = 500 #Around 20 seconds
+        self.performanceTimer = 300 #Around 16 seconds
         self.deltHealth = 0
     def update(self,enemyBulletGroup):
         if self.exp >= 100 and self.powerLevel < 3:
@@ -51,26 +51,26 @@ class Player(pygame.sprite.Sprite):
             bulletOnScreen = len(enemyBulletGroup)
             if bulletOnScreen!=0:
                 self.performance = 50*(self.deltHealth/(bulletOnScreen+10))
-            self.performanceTimer = 500
+            self.performanceTimer = 300
             print("Performance: ",self.performance)
     def shoot(self,playerBulletGroup):
         if self.powerLevel == 1:
             bullet = PlayerBullet(self.rect.midtop[0],
-                                            self.rect.midtop[1],self.powerLevel)
+                                            self.rect.midtop[1],1)
             playerBulletGroup.add(bullet)
         elif self.powerLevel == 2:
             bullet1 = PlayerBullet(self.rect.midtop[0]-10,
-                                            self.rect.midtop[1],self.powerLevel)
+                                            self.rect.midtop[1],1)
             bullet2 = PlayerBullet(self.rect.midtop[0]+10,
-                                            self.rect.midtop[1],self.powerLevel)
+                                            self.rect.midtop[1],1)
             playerBulletGroup.add(bullet1,bullet2)
         elif self.powerLevel == 3:
             bulletMid = PlayerBullet(self.rect.midtop[0],
-                                            self.rect.midtop[1],self.powerLevel-1)
+                                            self.rect.midtop[1],1)
             bulletLeft = PlayerBullet(self.rect.midtop[0]-20,
-                                            self.rect.midtop[1]-20,self.powerLevel-1)
+                                            self.rect.midtop[1]-20,1)
             bulletRight = PlayerBullet(self.rect.midtop[0]+20,
-                                            self.rect.midtop[1]-20,self.powerLevel-1)
+                                            self.rect.midtop[1]-20,1)
             playerBulletGroup.add(bulletMid,bulletLeft,bulletRight)
 class PlayerBullet(pygame.sprite.Sprite):
     def __init__(self,x,y,power):
@@ -247,7 +247,70 @@ class Button(pygame.sprite.Sprite):
                 self.action()
         else:
             self.image = self.normalImage
-        
-        
-        
-        
+
+class TeamEnemy(pygame.sprite.Sprite):
+    def __init__(self,x = None):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(os.path.join('Assets','Enemies',"GroupEnemytrial.png")).convert()
+        self.rect = self.image.get_rect()
+        self.exp = 10
+        self.health = 20
+        self.rect.centerx = 300
+        self.rect.bottom = 0
+        self.image.set_colorkey((0,0,0))
+        self.moveDir = [(-1,1),(1,1),(1,-1),(-1,-1)]
+        self.moveInterval = 30
+        self.shootInterval = self.moveInterval
+        self.shootTimer = self.shootInterval
+        self.moveDuration = 30
+        self.moveDurationTimer = self.moveDuration
+        self.moveIntervalTimer = self.moveInterval
+        self.stop = True
+        self.velocity = 3
+        self.moveIndex = 0
+    def move(self):
+        if self.rect.centery <= 200: self.rect.centery += self.velocity
+        else:
+            if self.moveDurationTimer <= 0 and not self.stop:
+                self.moveIndex = (self.moveIndex+1)%4
+                self.stop = True
+                self.moveDurationTimer = self.moveDuration
+            elif self.moveDuration > 0 and not self.stop:
+                self.rect.centerx += self.velocity*self.moveDir[self.moveIndex][0]
+                self.rect.centery += self.velocity*self.moveDir[self.moveIndex][1]
+                self.moveDurationTimer -= 1
+            elif self.stop and self.moveIntervalTimer > 0:
+                self.moveIntervalTimer -= 1
+            elif self.moveIntervalTimer <= 0:
+                self.stop = False
+                self.moveIntervalTimer = self.moveInterval
+    def shoot(self,enemyBulletGroup,mode,player):
+        if not self.stop:
+            return
+        if self.stop and self.shootTimer > 0:
+            self.shootTimer -= 1
+            return
+        if mode == "Straight":
+            deltX = player.rect.centerx - self.rect.centerx
+            deltY = player.rect.centery - self.rect.bottom
+            mag = (deltX**2 + deltY**2)**0.5
+            direction = (deltX/mag, deltY/mag)
+            bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+            self.shootTimer = self.shootInterval
+            enemyBulletGroup.add(bullet)
+        elif mode == "Right":
+            deltX = player.rect.centerx + 80 - self.rect.centerx
+            deltY = player.rect.centery - self.rect.bottom
+            mag = (deltX**2 + deltY**2)**0.5
+            direction = (deltX/mag, deltY/mag)
+            bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+            self.shootTimer = self.shootInterval
+            enemyBulletGroup.add(bullet)
+        elif mode == "Left":
+            deltX = player.rect.centerx - 80 - self.rect.centerx
+            deltY = player.rect.centery - self.rect.bottom
+            mag = (deltX**2 + deltY**2)**0.5
+            direction = (deltX/mag, deltY/mag)
+            bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+            self.shootTimer = self.shootInterval
+            enemyBulletGroup.add(bullet)

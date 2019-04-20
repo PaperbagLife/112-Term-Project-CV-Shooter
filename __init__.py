@@ -20,45 +20,37 @@ gameSpeed = 30
 pygame.font.init()
 hpFont = pygame.font.SysFont('Comic Sans MS', 30)
 
-def spawn(enemyGroup,levels,curLevelProgress):
+def spawn(enemyGroup,levels,curLevelProgress,teamEnemyGroup):
     level = curLevelProgress[0]
     curLevel = levels[level-1]
     levelProgress = curLevelProgress[1]
     #Level is the level object, progress is an interger for indexing into list
-    if levelProgress == len(curLevel.enemyList)-1:
+    
         #Spawn for the last time and return level += 1, set progress to 0
-        numSpawn = curLevel.spawnAmount[levelProgress]
-        for i in range(numSpawn):
-            enemySpec = curLevel.enemyList[levelProgress]
-            enemyType = enemySpec[0]
-            if enemyType == "Normal":
-                curEnemy = Enemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
-                                        random.randint(i*windowWidth/numSpawn,(i+1)*windowWidth/numSpawn))
-            elif enemyType == "Moving":
-                curEnemy = MoveEnemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
-                                    random.randint(i*(windowWidth-100)/numSpawn+50,
-                                                        (i+1)*(windowWidth-100)/numSpawn)-50)
-            elif enemyType == "MiniBoss":
-                curEnemy = MiniBoss1(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5])
+    numSpawn = curLevel.spawnAmount[levelProgress]
+    for i in range(numSpawn):
+
+        enemySpec = curLevel.enemyList[levelProgress]
+        enemyType = enemySpec[0]
+        if enemyType == "Normal":
+            curEnemy = Enemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
+                                    random.randint(i*windowWidth/numSpawn,(i+1)*windowWidth/numSpawn))
             enemyGroup.add(curEnemy)
-        print("end of level")
+        elif enemyType == "Moving":
+            curEnemy = MoveEnemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
+                                random.randint(i*(windowWidth-100)/numSpawn+50,
+                                                    (i+1)*(windowWidth-100)/numSpawn)-50)
+            enemyGroup.add(curEnemy)
+        elif enemyType == "MiniBoss":
+            curEnemy = MiniBoss1(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5])
+            enemyGroup.add(curEnemy)
+        elif enemyType == "Team":
+            curEnemy = TeamEnemy(enemySpec[1])
+            teamEnemyGroup.add(curEnemy)
+            #TODO: curEnemy = Team.... etc 
+    if levelProgress == len(curLevel.enemyList)-1:
         return (curLevel.spawnWait[levelProgress],(level+1,0))
     else:
-        #Spawn and increment progress by 1
-        numSpawn = curLevel.spawnAmount[levelProgress]
-        for i in range(numSpawn):
-            enemySpec = curLevel.enemyList[levelProgress]
-            enemyType = enemySpec[0]
-            if enemyType == "Normal":
-                curEnemy = Enemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
-                                        random.randint(i*windowWidth/numSpawn,(i+1)*windowWidth/numSpawn))
-            elif enemyType == "Moving":
-                curEnemy = MoveEnemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
-                                    random.randint(i*(windowWidth-100)/numSpawn+50,
-                                                                (i+1)*(windowWidth-100)/numSpawn)-50)
-            elif enemyType == "MiniBoss":
-                curEnemy = MiniBoss1(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5])
-            enemyGroup.add(curEnemy)
         return (curLevel.spawnWait[levelProgress],(level,levelProgress+1))
         
 def spawnPowerUp(player,powerUpGroup,enemyPos):
@@ -68,16 +60,14 @@ def spawnPowerUp(player,powerUpGroup,enemyPos):
         powerUpGroup.add(repair)
     
     
-    
 ###Main game
 def titleScreen():
     bgGroup = pygame.sprite.Group()
     bgGroup.add(Background("TitleScreen.png"))
-    bgGroup.draw(window)
     buttonGroup = pygame.sprite.Group()
     buttonGroup.add(Button(windowWidth//2, windowHeight//2,
                 "StartGame.png","StartGame2.png",CVShooter))
-    buttonGroup.add(Button(windowWidth//2,windowHeight//2 - 100,"Tutorial.png","Tutorial2.png",tutorial))
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 100,"Tutorial.png","Tutorial2.png",tutorial))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -87,6 +77,8 @@ def titleScreen():
         click = pygame.mouse.get_pressed()
         for button in buttonGroup:
             button.update(mouse,click)
+        window.fill((0,0,0))
+        bgGroup.draw(window)
         buttonGroup.draw(window)
         pygame.display.update()
         
@@ -99,7 +91,7 @@ def tutorial():
     player = Player(windowWidth//2,windowHeight - 80)
     playerSpriteGroup.add(player)
     backgroundGroup = pygame.sprite.Group()
-    background = Background("Background.png")
+    background = Background("TutorialBG.png")
     backgroundGroup.add(background)
     while teaching:
         for event in pygame.event.get():
@@ -170,19 +162,22 @@ def tutorial():
         cv2.putText(frame, 'Down', (265,400), font, 1, (0, 255, 0), 1, cv2.LINE_AA)
         cv2.imshow("Webcame",frame)
         
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_q]:
+            teaching = False
         window.fill((0,0,0))
         backgroundGroup.draw(window)
         playerSpriteGroup.draw(window)
-
         
         
         pygame.display.update()
-        
+    video.release()
+    cv2.destroyAllWindows()
+    return
 
 def CVShooter():
     score = 0
     gameOver = False
-    
     
     
     #Sprite Group for drawing player only
@@ -195,6 +190,8 @@ def CVShooter():
     enemyBulletGroup = pygame.sprite.Group()
     powerUpGroup = pygame.sprite.Group()
     backgroundGroup = pygame.sprite.Group()
+    teamEnemyGroup = pygame.sprite.Group()
+    teamEnemyModeOfAction = ["Straight","Right","Left"]
     
     background = Background("Background.png")
     backgroundGroup.add(background)
@@ -218,20 +215,28 @@ def CVShooter():
     
     testCounter = 500
     testTimer = time.time()
-    
+    levelEnd = False
 ### Main Game
     while not gameOver:
         background.move()
         spawnInterval -= 1
+        
         ##handles spawning here
-        if (spawnInterval <= 0) and (curLevelProgress[0] <= len(levels)):
-            spawnInterval,curLevelProgress = spawn(enemyGroup,levels,curLevelProgress)
-        elif curLevelProgress[0] > len(levels) and len(enemyGroup) == 0:
+        if (spawnInterval <= 0) and curLevelProgress[0] <= len(levels) and not levelEnd:
+            levelBefore = curLevelProgress[0]
+            spawnInterval,curLevelProgress = spawn(enemyGroup,levels,curLevelProgress,teamEnemyGroup)
+            
+            if curLevelProgress[0] > levelBefore:
+                levelEnd = True
+            print(curLevelProgress,levelEnd)
+        elif curLevelProgress[0] > len(levels) and len(enemyGroup) == 0 and len(teamEnemyGroup) == 0:
             print("Currently ended")
             video.release()
             cv2.destroyAllWindows()
             pygame.quit()
             return
+        if (len(enemyGroup) + len(teamEnemyGroup)) == 0:
+            levelEnd = False
         window.fill((0,0,0))
 
         for event in pygame.event.get():
@@ -308,12 +313,12 @@ def CVShooter():
         if keys[pygame.K_t]:
             player.exp+=10
             print(player.powerLevel)
-        if keys[pygame.K_e] and len(enemyGroup) == 0:
+        if keys[pygame.K_e]:
             enemyGroup.add(Enemy(3,10,20,"Enemy1.png",5))
         
         ### Debug feature end
         player.update(enemyBulletGroup)
-        shootInterval = 10 - 2*player.powerLevel
+        shootInterval = 15 - player.powerLevel
         if timeUntilShoot <= 0:
             player.shoot(playerBulletGroup)
             timeUntilShoot = shootInterval
@@ -363,8 +368,27 @@ def CVShooter():
             powerUp.move()
             if powerUp.rect.colliderect(player.rect):
                 if isinstance(powerUp,Repair):
-                    player.health += int(3 + player.performance//10)
+                    player.health += int(3 + player.performance//15)
                 powerUpGroup.remove(powerUp)
+        teamCounter = 0
+        #teamEnemyModeOfAction = ["Straight","Right","Left"]
+        for teamEnemy in teamEnemyGroup:
+            memberLeft = len(teamEnemyGroup)
+            if memberLeft <= 2:
+                teamEnemy.shootInterval = 10
+            teamEnemy.move()
+            teamEnemy.shoot(enemyBulletGroup,teamEnemyModeOfAction[teamCounter%3],player)
+            teamCounter += 1
+            for bullet in playerBulletGroup:
+                if teamEnemy.rect.colliderect(bullet.rect):
+                    playerBulletGroup.remove(bullet)
+                    teamEnemy.health -= bullet.power
+                    if teamEnemy.health <= 0:
+                        player.exp += teamEnemy.exp
+                        if (random.randint(int(player.performance),100) >= 80):
+                            spawnPowerUp(player,powerUpGroup,teamEnemy.rect.center)
+                        teamEnemyGroup.remove(teamEnemy)
+                
         if player.health <= 0:
             #Explosion effect and gameOver screen
             gameOver = True
@@ -373,6 +397,7 @@ def CVShooter():
         playerSpriteGroup.draw(window)
         playerBulletGroup.draw(window)
         enemyGroup.draw(window)
+        teamEnemyGroup.draw(window)
         enemyBulletGroup.draw(window)
         powerUpGroup.draw(window)
         playerHP = hpFont.render("Health: "+ str(player.health),False, (255,255,255))
@@ -386,7 +411,6 @@ def CVShooter():
         clock.tick(gameSpeed)
     video.release()
     cv2.destroyAllWindows()
-    pygame.quit()
     return
 
 titleScreen()
