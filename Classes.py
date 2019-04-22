@@ -6,9 +6,9 @@ import math
 class Player(pygame.sprite.Sprite):
     #player ship, has a powerLevel for the bullets, which is leveled up through
     #gaining exp
-    def __init__(self,x,y,health=20,powerLevel=1,exp=0):
+    def __init__(self,x,y,powerLevel=1,exp=0):
         pygame.sprite.Sprite.__init__(self)
-        self.health = health
+        self.health = 10
         self.powerLevel = powerLevel
         self.exp = exp
         self.normalImage = pygame.image.load(os.path.join('Assets',
@@ -29,7 +29,7 @@ class Player(pygame.sprite.Sprite):
         #Performance highest is 0, lowest is 50
         self.performance = 0
         self.prevHealth = self.health
-        self.performanceTimer = 300 #Around 16 seconds
+        self.performanceTimer = 250 #Around 10 seconds
         self.deltHealth = 0
     def update(self,enemyBulletGroup):
         if self.exp >= 100 and self.powerLevel < 3:
@@ -51,7 +51,7 @@ class Player(pygame.sprite.Sprite):
             bulletOnScreen = len(enemyBulletGroup)
             if bulletOnScreen!=0:
                 self.performance = 50*(self.deltHealth/(bulletOnScreen+10))
-            self.performanceTimer = 300
+            self.performanceTimer = 250
             print("Performance: ",self.performance)
     def shoot(self,playerBulletGroup):
         if self.powerLevel == 1:
@@ -254,7 +254,7 @@ class TeamEnemy(pygame.sprite.Sprite):
         self.image = pygame.image.load(os.path.join('Assets','Enemies',"GroupEnemytrial.png")).convert()
         self.rect = self.image.get_rect()
         self.exp = 10
-        self.health = 20
+        self.health = 1
         self.rect.centerx = 300
         self.rect.bottom = 0
         self.image.set_colorkey((0,0,0))
@@ -347,12 +347,12 @@ class Explosion(pygame.sprite.Sprite):
         self.rect.centerx = x
         self.rect.centery = y
         self.count = 0
-        self.timeInt = 5
+        self.timeInt = 3
     def update(self):
         self.timeInt -= 1
         if self.timeInt <= 0:
             self.count += 1
-            self.timeInt = 5
+            self.timeInt = 3
         if self.count < len(self.images):
             self.image = self.images[self.count]
         #Return True if it needs to be destroyed, ie reached the end of explosion

@@ -20,6 +20,8 @@ gameSpeed = 30
 pygame.font.init()
 hpFont = pygame.font.SysFont('Comic Sans MS', 30)
 
+
+
 def spawn(enemyGroup,levels,curLevelProgress,teamEnemyGroup):
     level = curLevelProgress[0]
     curLevel = levels[level-1]
@@ -84,7 +86,46 @@ def titleScreen():
         bgGroup.draw(window)
         buttonGroup.draw(window)
         pygame.display.update()
-        
+def winScreen():
+    bgGroup = pygame.sprite.Group()
+    bgGroup.add(Background("WinScreen.png"))
+    buttonGroup = pygame.sprite.Group()
+    buttonGroup.add(Button(windowWidth//2, windowHeight//2 + 100,
+                "Restart.png","Restart2.png",CVShooter))
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,"ReturnToTitle.png","ReturnToTitle2.png",titleScreen))
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        for button in buttonGroup:
+            button.update(mouse,click)
+        window.fill((0,0,0))
+        bgGroup.draw(window)
+        buttonGroup.draw(window)
+        pygame.display.update()
+def loseScreen():
+    bgGroup = pygame.sprite.Group()
+    bgGroup.add(Background("LoseScreen.png"))
+    buttonGroup = pygame.sprite.Group()
+    buttonGroup.add(Button(windowWidth//2, windowHeight//2 + 100,
+                "Restart.png","Restart2.png",CVShooter))
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,"ReturnToTitle.png","ReturnToTitle2.png",titleScreen))
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        for button in buttonGroup:
+            button.update(mouse,click)
+        window.fill((0,0,0))
+        bgGroup.draw(window)
+        buttonGroup.draw(window)
+        pygame.display.update()
 def tutorial():
     print("start tutorial")
     video = cv2.VideoCapture(0)
@@ -216,12 +257,12 @@ def CVShooter():
     #OpenCV setup
     video = cv2.VideoCapture(0)
     
-    
+    endTimer = 50
     testCounter = 500
     testTimer = time.time()
     levelEnd = False
 ### Main Game
-    while not gameOver:
+    while endTimer >= 0:
         background.move()
         spawnInterval -= 1
         
@@ -232,12 +273,11 @@ def CVShooter():
             
             if curLevelProgress[0] > levelBefore:
                 levelEnd = True
-            print(curLevelProgress,levelEnd)
         elif curLevelProgress[0] > len(levels) and len(enemyGroup) == 0 and len(teamEnemyGroup) == 0:
             print("Currently ended")
             video.release()
             cv2.destroyAllWindows()
-            pygame.quit()
+            winScreen()
             return
         if (len(enemyGroup) + len(teamEnemyGroup)) == 0:
             levelEnd = False
@@ -319,11 +359,14 @@ def CVShooter():
             print(player.powerLevel)
         if keys[pygame.K_e]:
             enemyGroup.add(Enemy(3,10,20,"Enemy1.png",5))
-        
+        if keys[pygame.K_1]:
+            player.health -= 1
+        if keys[pygame.K_2]:
+            curLevelProgress = (3,0)
         ### Debug feature end
         player.update(enemyBulletGroup)
         shootInterval = 15 - player.powerLevel
-        if timeUntilShoot <= 0:
+        if timeUntilShoot <= 0 and not gameOver:
             player.shoot(playerBulletGroup)
             timeUntilShoot = shootInterval
         else:
@@ -397,7 +440,11 @@ def CVShooter():
                 explosionGroup.remove(explosion)
         if player.health <= 0:
             #Explosion effect and gameOver screen
+            if not gameOver:
+                explode(player.rect.centerx,player.rect.centery,player.rect.size,explosionGroup)
             gameOver = True
+            playerSpriteGroup.remove(player)
+            endTimer -= 1
         ##Drawing and updating for sprite group
         backgroundGroup.draw(window)
         playerSpriteGroup.draw(window)
@@ -418,6 +465,7 @@ def CVShooter():
         clock.tick(gameSpeed)
     video.release()
     cv2.destroyAllWindows()
+    loseScreen()
     return
-CVShooter()
-# titleScreen()
+
+titleScreen()
