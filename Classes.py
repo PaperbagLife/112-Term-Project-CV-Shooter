@@ -254,7 +254,7 @@ class TeamEnemy(pygame.sprite.Sprite):
         self.image = pygame.image.load(os.path.join('Assets','Enemies',"GroupEnemytrial.png")).convert()
         self.rect = self.image.get_rect()
         self.exp = 10
-        self.health = 1
+        self.health = 50
         self.rect.centerx = 300
         self.rect.bottom = 0
         self.image.set_colorkey((0,0,0))

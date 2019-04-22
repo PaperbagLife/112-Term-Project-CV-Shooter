@@ -353,16 +353,22 @@ def CVShooter():
             player.rect.centerx -= player.velocity
         if keys[pygame.K_RIGHT] and player.rect.right < windowWidth:
             player.rect.centerx += player.velocity
+        if keys[pygame.K_UP]:
+            player.rect.centery -= player.velocity
+        if keys[pygame.K_DOWN]:
+            player.rect.centery += player.velocity
         ### Debug features
         if keys[pygame.K_t]:
             player.exp+=10
             print(player.powerLevel)
         if keys[pygame.K_e]:
             enemyGroup.add(Enemy(3,10,20,"Enemy1.png",5))
-        if keys[pygame.K_1]:
+        if keys[pygame.K_d]:
             player.health -= 1
         if keys[pygame.K_2]:
             curLevelProgress = (3,0)
+        if keys[pygame.K_h]:
+            player.health += 1
         ### Debug feature end
         player.update(enemyBulletGroup)
         shootInterval = 15 - player.powerLevel
@@ -397,7 +403,6 @@ def CVShooter():
                     player.health-=1
                     player.invincible = True
                     player.invincibleTimer = 50
-    
         for bullet in enemyBulletGroup:
             bullet.move()
             if bullet.rect.colliderect(player.rect):
