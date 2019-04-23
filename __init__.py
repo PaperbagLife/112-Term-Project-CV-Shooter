@@ -86,13 +86,14 @@ def titleScreen():
         bgGroup.draw(window)
         buttonGroup.draw(window)
         pygame.display.update()
-def winScreen():
+def winScreen(score):
     bgGroup = pygame.sprite.Group()
     bgGroup.add(Background("WinScreen.png"))
     buttonGroup = pygame.sprite.Group()
     buttonGroup.add(Button(windowWidth//2, windowHeight//2 + 100,
                 "Restart.png","Restart2.png",CVShooter))
     buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,"ReturnToTitle.png","ReturnToTitle2.png",titleScreen))
+    score = hpFont.render("Score: %d" %(score), False, (255,255,255))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -104,9 +105,11 @@ def winScreen():
             button.update(mouse,click)
         window.fill((0,0,0))
         bgGroup.draw(window)
+        window.blit(score,(225,700))
         buttonGroup.draw(window)
         pygame.display.update()
-def loseScreen():
+def loseScreen(score):
+    score = hpFont.render("Score: %d" %(score), False, (255,255,255))
     bgGroup = pygame.sprite.Group()
     bgGroup.add(Background("LoseScreen.png"))
     buttonGroup = pygame.sprite.Group()
@@ -124,13 +127,13 @@ def loseScreen():
             button.update(mouse,click)
         window.fill((0,0,0))
         bgGroup.draw(window)
+        window.blit(score,(225,700))
         buttonGroup.draw(window)
         pygame.display.update()
 def tutorial():
     print("start tutorial")
     video = cv2.VideoCapture(0)
     teaching = True
-    
     playerSpriteGroup = pygame.sprite.Group() 
     player = Player(windowWidth//2,windowHeight - 80)
     playerSpriteGroup.add(player)
@@ -230,6 +233,7 @@ def CVShooter():
     playerBulletGroup = pygame.sprite.Group()
     enemyGroup = pygame.sprite.Group()
     enemyBulletGroup = pygame.sprite.Group()
+    preludeGroup = pygame.sprite.Group()
     explosionGroup = pygame.sprite.Group()
     powerUpGroup = pygame.sprite.Group()
     backgroundGroup = pygame.sprite.Group()
@@ -271,7 +275,7 @@ def CVShooter():
             print("Currently ended")
             video.release()
             cv2.destroyAllWindows()
-            winScreen()
+            winScreen(player.exp + (player.powerLevel-1)*100)
             return
         if (len(enemyGroup) + len(teamEnemyGroup)) == 0:
             levelEnd = False
@@ -346,9 +350,9 @@ def CVShooter():
             player.rect.centerx -= player.velocity
         if keys[pygame.K_RIGHT] and player.rect.right < windowWidth:
             player.rect.centerx += player.velocity
-        if keys[pygame.K_UP]:
+        if keys[pygame.K_UP] and player.rect.top > 0:
             player.rect.centery -= player.velocity
-        if keys[pygame.K_DOWN]:
+        if keys[pygame.K_DOWN] and player.rect.bottom < windowHeight:
             player.rect.centery += player.velocity
         ### Debug features
         if keys[pygame.K_t]:
@@ -380,7 +384,10 @@ def CVShooter():
         for enemy in enemyGroup:
             enemy.move()
             enemy.update(player.performance)
-            enemy.shoot(enemyBulletGroup,player)
+            if isinstance(enemy,Boss):
+                enemy.shoot(enemyBulletGroup,player,preludeGroup)
+            else:
+                enemy.shoot(enemyBulletGroup,player)
             if enemy.rect.top >= windowHeight + 5:
                 enemyGroup.remove(enemy)
             for bullet in playerBulletGroup:
@@ -398,19 +405,25 @@ def CVShooter():
                 if player.invincible == False:
                     player.health-=1
                     player.invincible = True
-                    player.invincibleTimer = 50
+                    player.invincibleTimer = 40
+        for prelude in preludeGroup:
+            for enemy in enemyGroup:
+                if isinstance(enemy,Boss):
+                    xLoc = enemy.rect.centerx
+            if prelude.update(xLoc):
+                preludeGroup.remove(prelude)
         for bullet in enemyBulletGroup:
             if isinstance(bullet,Laser):
-                print("laser present")
                 #do laser updates using the only enemy in enemySpriteGroup, the boss
                 for enemy in enemyGroup:
-                    xLoc = enemy.rect.centerx
-                #Equiv to laser.update()
+                    if isinstance(enemy,Boss):
+                        xLoc = enemy.rect.centerx
                 if bullet.rect.colliderect(player.rect):
                     if player.invincible == False:
                         player.health-=1
                         player.invincible = True
-                        player.invincibleTimer = 50
+                        player.invincibleTimer = 40
+                #Equiv to laser.update()
                 if bullet.update(xLoc):
                     enemyBulletGroup.remove(bullet)
             else:
@@ -468,6 +481,7 @@ def CVShooter():
         teamEnemyGroup.draw(window)
         enemyBulletGroup.draw(window)
         powerUpGroup.draw(window)
+        preludeGroup.draw(window)
         explosionGroup.draw(window)
         playerHP = hpFont.render("Health: "+ str(player.health),False, (255,255,255))
         window.blit(playerHP,(20,windowHeight-50))
@@ -480,7 +494,7 @@ def CVShooter():
         clock.tick(gameSpeed)
     video.release()
     cv2.destroyAllWindows()
-    loseScreen()
+    loseScreen(player.exp + (player.powerLevel-1)*100)
     return
 
 titleScreen()

@@ -8,7 +8,7 @@ class Player(pygame.sprite.Sprite):
     #gaining exp
     def __init__(self,x,y,powerLevel=1,exp=0):
         pygame.sprite.Sprite.__init__(self)
-        self.health = 10
+        self.health = 15
         self.powerLevel = powerLevel
         self.exp = exp
         self.normalImage = pygame.image.load(os.path.join('Assets',
@@ -361,8 +361,8 @@ class Explosion(pygame.sprite.Sprite):
 class Boss(pygame.sprite.Sprite):
     def __init__(self,velocity):
         pygame.sprite.Sprite.__init__(self)
-        self.health = 100
-        self.shootTimer = 20
+        self.health = 150
+        self.exp = 999
         self.image = pygame.image.load(os.path.join('Assets','Enemies',
                             'Boss.png')).convert()
         self.rect = self.image.get_rect()
@@ -373,9 +373,18 @@ class Boss(pygame.sprite.Sprite):
         #Self.stationary is used for laser attacks. Lazer 
         self.stationary = False
         self.lasers = []
-        self.laserStopInterval = 100
+        self.laserStopInterval = 150
         self.laserStopIntervalTimer = self.laserStopInterval
-        self.laserON = False
+        self.laserPreludeDuration = 30
+        self.laserPreludeTimer = self.laserStopInterval - self.laserPreludeDuration
+        
+        self.straightDownTimer = 220
+        self.straightDownDuration = 100
+        self.straightDownInterval = 20
+        self.fanBulletTimer = 300
+        self.fanBulletInterval = 20
+        self.fanBulletDuration = 200
+        self.fanShots = 6
     def move(self):
         if self.rect.top <= 0:
             self.rect.centery += self.velocity
@@ -386,22 +395,60 @@ class Boss(pygame.sprite.Sprite):
                 self.rect.centerx += self.velocity
             else:
                 self.rect.centerx -= self.velocity
-    def shoot(self,enemyBulletGroup,player):
-        print("shooting")
+    def shoot(self,enemyBulletGroup,player,preludeGroup):
         if self.laserStopIntervalTimer <= 0:
-            laser1 = Laser(self.rect.centerx,self.rect.bottom,-50)
-            laser2 = Laser(self.rect.centerx,self.rect.bottom,50)
-            enemyBulletGroup.add(laser1)
-            enemyBulletGroup.add(laser2)
+            laser1 = Laser(self.rect.centerx,self.rect.bottom-10,-30)
+            laser2 = Laser(self.rect.centerx,self.rect.bottom-10, 30)
+            enemyBulletGroup.add(laser1,laser2)
             self.laserStopIntervalTimer = self.laserStopInterval
+            self.laserPreludeTimer = self.laserStopInterval - self.laserPreludeDuration
         self.laserStopIntervalTimer -= 1
+        if self.laserPreludeTimer <= 0:
+            prelude1 = Prelude(self.rect.centerx,self.rect.bottom-10,-30)
+            prelude2 = Prelude(self.rect.centerx,self.rect.bottom-10, 30)
+            preludeGroup.add(prelude1,prelude2)
+        self.laserPreludeTimer -= 1
+        if self.straightDownTimer <= 0:
+            #Shoot straight down
+            if self.straightDownDuration >= 0:
+                if self.straightDownInterval <= 0:
+                    bullet2 = EnemyStraightBullet(self.rect.centerx+80,self.rect.bottom,(0,1))
+                    bullet3 = EnemyStraightBullet(self.rect.centerx-80,self.rect.bottom,(0,1))
+                    enemyBulletGroup.add(bullet2,bullet3)
+                    self.straightDownInterval = 10
+                self.straightDownDuration -= 1
+                self.straightDownInterval -= 1
+            else:
+                self.straightDownDuration = 100
+                self.straightDownTimer = 300
+        self.straightDownTimer -= 1
+        if self.fanBulletTimer <= 0:
+            #Shoot straight down
+            if self.fanBulletDuration >= 0:
+                if self.fanBulletInterval <= 0:
+                    for i in range(self.fanShots+1):
+                        xVel = (-3**0.5)*math.cos(math.pi*2/3/(self.fanShots)*i)-\
+                                    (-math.sin(math.pi*2/3/(self.fanShots)*i))
+                        yVel = (-3**0.5)*math.sin(math.pi*2/3/(self.fanShots)*i)+\
+                                    (-math.cos(math.pi*2/3/(self.fanShots)*i))
+                        mag = (xVel**2 + yVel**2)**0.5
+                        direction = (xVel/mag,-yVel/mag)
+                        bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+                        enemyBulletGroup.add(bullet)
+                    self.fanBulletInterval = 20
+                self.fanBulletDuration -= 1
+                self.fanBulletInterval -= 1
+            else:
+                self.fanBulletDuration = 100
+                self.fanBulletTimer = 220
+        self.fanBulletTimer -= 1
     def update(self,playerPerformance):
         pass
 class Laser(pygame.sprite.Sprite):
     def __init__(self,x,shotY,offSet):
         pygame.sprite.Sprite.__init__(self)
         self.offSet = offSet
-        scale = (60,800-shotY)
+        scale = (60,800)
         laser1 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
                         'Bullets','lasers','1.png')).convert(),scale)
         laser1.set_colorkey((0,0,0))
@@ -438,7 +485,22 @@ class Laser(pygame.sprite.Sprite):
             self.timeInt = 3
         self.image = self.images[self.count%len(self.images)]
         #Return True if it needs to be destroyed
-        return self.count >= 20
+        return self.count >= 15
+
+class Prelude(pygame.sprite.Sprite):
+    def __init__(self,x,shotY,offSet):
+        pygame.sprite.Sprite.__init__(self)
+        self.offSet = offSet
+        scale = (30,800)
+        self.image = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Bullets','lasers','prelude.png')).convert(),scale)
+        self.image.set_colorkey((0,0,0))
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x+self.offSet
+        self.rect.top = shotY
+        self.timer = 4
         
-        
-        
+    def update(self,x):
+        self.rect.centerx = x + self.offSet
+        self.timer -= 1
+        return self.timer <= 0
