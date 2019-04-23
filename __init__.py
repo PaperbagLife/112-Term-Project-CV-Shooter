@@ -20,8 +20,6 @@ gameSpeed = 30
 pygame.font.init()
 hpFont = pygame.font.SysFont('Comic Sans MS', 30)
 
-
-
 def spawn(enemyGroup,levels,curLevelProgress,teamEnemyGroup):
     level = curLevelProgress[0]
     curLevel = levels[level-1]
@@ -49,7 +47,9 @@ def spawn(enemyGroup,levels,curLevelProgress,teamEnemyGroup):
         elif enemyType == "Team":
             curEnemy = TeamEnemy(enemySpec[1])
             teamEnemyGroup.add(curEnemy)
-            #TODO: curEnemy = Team.... etc 
+        elif enemyType == "Boss":
+            curEnemy = Boss(enemySpec[1])
+            enemyGroup.add(curEnemy)
     if levelProgress == len(curLevel.enemyList)-1:
         return (curLevel.spawnWait[levelProgress],(level+1,0))
     else:
@@ -205,14 +205,12 @@ def tutorial():
         cv2.putText(frame, 'Up', (275,100), font, 1, (0, 255, 0), 1, cv2.LINE_AA)
         cv2.putText(frame, 'Down', (265,400), font, 1, (0, 255, 0), 1, cv2.LINE_AA)
         cv2.imshow("Webcame",frame)
-        
         keys = pygame.key.get_pressed()
         if keys[pygame.K_q]:
             teaching = False
         window.fill((0,0,0))
         backgroundGroup.draw(window)
         playerSpriteGroup.draw(window)
-        
         
         pygame.display.update()
     video.release()
@@ -241,18 +239,14 @@ def CVShooter():
     background = Background("Background.png")
     backgroundGroup.add(background)
     
-    
     shootInterval = 10
     timeUntilShoot = shootInterval
     ## Wave control
-    
-    
     spawnInterval = 20
     # A list of Level Objects
     levels = levelConstructor()
     #This is a tuple of current level and the progress of the level.
     curLevelProgress = (1,0)
-    
     
     #OpenCV setup
     video = cv2.VideoCapture(0)
@@ -300,7 +294,6 @@ def CVShooter():
         lowerRed = np.array([100,150,125])
         higherRed = np.array([120,255,200])
     
-        
         csv = cv2.cvtColor(blurred,cv2.COLOR_RGB2HSV)
         mask = cv2.inRange(csv,lowerRed,higherRed)
         mask = cv2.erode(mask, None, iterations=2)
@@ -366,7 +359,9 @@ def CVShooter():
         if keys[pygame.K_d]:
             player.health -= 1
         if keys[pygame.K_2]:
-            curLevelProgress = (3,0)
+            for enemy in enemyGroup:
+                enemyGroup.remove(enemy)
+            curLevelProgress = (4,0)
         if keys[pygame.K_h]:
             player.health += 1
         ### Debug feature end
@@ -398,23 +393,38 @@ def CVShooter():
                             spawnPowerUp(player,powerUpGroup,enemy.rect.center)
                         explode(enemy.rect.centerx,enemy.rect.centery,enemy.rect.size,explosionGroup)
                         enemyGroup.remove(enemy)
+            
             if enemy.rect.colliderect(player.rect):
                 if player.invincible == False:
                     player.health-=1
                     player.invincible = True
                     player.invincibleTimer = 50
         for bullet in enemyBulletGroup:
-            bullet.move()
-            if bullet.rect.colliderect(player.rect):
-                if player.invincible == False:
-                    player.health-=1
-                    player.invincible = True
-                    player.invincibleTimer = 50
-                enemyBulletGroup.remove(bullet)
-            if bullet.rect.centerx >= windowWidth+10 or bullet.rect.centerx <= -10:
-                enemyBulletGroup.remove(bullet)
-            if bullet.rect.centery >= windowHeight+10 or bullet.rect.centery <= -10:
-                enemyBulletGroup.remove(bullet)
+            if isinstance(bullet,Laser):
+                print("laser present")
+                #do laser updates using the only enemy in enemySpriteGroup, the boss
+                for enemy in enemyGroup:
+                    xLoc = enemy.rect.centerx
+                #Equiv to laser.update()
+                if bullet.rect.colliderect(player.rect):
+                    if player.invincible == False:
+                        player.health-=1
+                        player.invincible = True
+                        player.invincibleTimer = 50
+                if bullet.update(xLoc):
+                    enemyBulletGroup.remove(bullet)
+            else:
+                bullet.move()
+                if bullet.rect.colliderect(player.rect):
+                    if player.invincible == False:
+                        player.health-=1
+                        player.invincible = True
+                        player.invincibleTimer = 50
+                    enemyBulletGroup.remove(bullet)
+                if bullet.rect.centerx >= windowWidth+10 or bullet.rect.centerx <= -10:
+                    enemyBulletGroup.remove(bullet)
+                if bullet.rect.centery >= windowHeight+10 or bullet.rect.centery <= -10:
+                    enemyBulletGroup.remove(bullet)
         for powerUp in powerUpGroup:
             powerUp.move()
             if powerUp.rect.colliderect(player.rect):

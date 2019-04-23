@@ -357,7 +357,88 @@ class Explosion(pygame.sprite.Sprite):
             self.image = self.images[self.count]
         #Return True if it needs to be destroyed, ie reached the end of explosion
         return self.count == len(self.images)
-        
+
+class Boss(pygame.sprite.Sprite):
+    def __init__(self,velocity):
+        pygame.sprite.Sprite.__init__(self)
+        self.health = 100
+        self.shootTimer = 20
+        self.image = pygame.image.load(os.path.join('Assets','Enemies',
+                            'Boss.png')).convert()
+        self.rect = self.image.get_rect()
+        self.rect.centerx = 300
+        self.rect.bottom = 0
+        self.velocity = velocity
+        self.moveRight = True
+        #Self.stationary is used for laser attacks. Lazer 
+        self.stationary = False
+        self.lasers = []
+        self.laserStopInterval = 100
+        self.laserStopIntervalTimer = self.laserStopInterval
+        self.laserON = False
+    def move(self):
+        if self.rect.top <= 0:
+            self.rect.centery += self.velocity
+        elif not self.stationary:
+            if self.rect.right >= 600 or self.rect.left <= 0:
+                self.moveRight = not self.moveRight
+            if self.moveRight:
+                self.rect.centerx += self.velocity
+            else:
+                self.rect.centerx -= self.velocity
+    def shoot(self,enemyBulletGroup,player):
+        print("shooting")
+        if self.laserStopIntervalTimer <= 0:
+            laser1 = Laser(self.rect.centerx,self.rect.bottom,-50)
+            laser2 = Laser(self.rect.centerx,self.rect.bottom,50)
+            enemyBulletGroup.add(laser1)
+            enemyBulletGroup.add(laser2)
+            self.laserStopIntervalTimer = self.laserStopInterval
+        self.laserStopIntervalTimer -= 1
+    def update(self,playerPerformance):
+        pass
+class Laser(pygame.sprite.Sprite):
+    def __init__(self,x,shotY,offSet):
+        pygame.sprite.Sprite.__init__(self)
+        self.offSet = offSet
+        scale = (60,800-shotY)
+        laser1 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Bullets','lasers','1.png')).convert(),scale)
+        laser1.set_colorkey((0,0,0))
+        laser2 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Bullets','lasers','2.png')).convert(),scale)
+        laser2.set_colorkey((0,0,0))
+        laser3 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Bullets','lasers','3.png')).convert(),scale)
+        laser3.set_colorkey((0,0,0))
+        laser4 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Bullets','lasers','4.png')).convert(),scale)
+        laser4.set_colorkey((0,0,0))
+        laser5 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Bullets','lasers','5.png')).convert(),scale)
+        laser5.set_colorkey((0,0,0))
+        laser6 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Bullets','lasers','6.png')).convert(),scale)
+        laser6.set_colorkey((0,0,0))
+        laser7 = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'Bullets','lasers','7.png')).convert(),scale)
+        laser7.set_colorkey((0,0,0))
+        self.images  = [laser1,laser2,laser3,laser4,laser5,laser6,laser7]
+        self.image = laser1
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x + self.offSet
+        self.rect.top = shotY
+        self.timeInt = 3
+        self.count = 0
+    def update(self,x):
+        self.rect.centerx = x + self.offSet
+        self.timeInt -= 1
+        if self.timeInt <= 0:
+            self.count += 1
+            self.timeInt = 3
+        self.image = self.images[self.count%len(self.images)]
+        #Return True if it needs to be destroyed
+        return self.count >= 20
         
         
         
