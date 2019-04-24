@@ -53,25 +53,30 @@ class Player(pygame.sprite.Sprite):
                 self.performance = 50*(self.deltHealth/(bulletOnScreen+10))
             self.performanceTimer = 250
             print("Performance: ",self.performance)
-    def shoot(self,playerBulletGroup):
-        if self.powerLevel == 1:
-            bullet = PlayerBullet(self.rect.midtop[0],
-                                            self.rect.midtop[1],1)
+    def shoot(self,playerBulletGroup,mode = None):
+        if mode == None:
+            if self.powerLevel == 1:
+                bullet = PlayerBullet(self.rect.midtop[0],
+                                                self.rect.midtop[1],1)
+                playerBulletGroup.add(bullet)
+            elif self.powerLevel == 2:
+                bullet1 = PlayerBullet(self.rect.midtop[0]-10,
+                                                self.rect.midtop[1],1)
+                bullet2 = PlayerBullet(self.rect.midtop[0]+10,
+                                                self.rect.midtop[1],1)
+                playerBulletGroup.add(bullet1,bullet2)
+            elif self.powerLevel == 3:
+                bulletMid = PlayerBullet(self.rect.midtop[0],
+                                                self.rect.midtop[1],1)
+                bulletLeft = PlayerBullet(self.rect.midtop[0]-20,
+                                                self.rect.midtop[1]-20,1)
+                bulletRight = PlayerBullet(self.rect.midtop[0]+20,
+                                                self.rect.midtop[1]-20,1)
+                playerBulletGroup.add(bulletMid,bulletLeft,bulletRight)
+        elif mode == "Challenge":
+            bullet = PlayerChallengeBullet(self.rect.midtop[0],
+                                                self.rect.midtop[1],1)
             playerBulletGroup.add(bullet)
-        elif self.powerLevel == 2:
-            bullet1 = PlayerBullet(self.rect.midtop[0]-10,
-                                            self.rect.midtop[1],1)
-            bullet2 = PlayerBullet(self.rect.midtop[0]+10,
-                                            self.rect.midtop[1],1)
-            playerBulletGroup.add(bullet1,bullet2)
-        elif self.powerLevel == 3:
-            bulletMid = PlayerBullet(self.rect.midtop[0],
-                                            self.rect.midtop[1],1)
-            bulletLeft = PlayerBullet(self.rect.midtop[0]-20,
-                                            self.rect.midtop[1]-20,1)
-            bulletRight = PlayerBullet(self.rect.midtop[0]+20,
-                                            self.rect.midtop[1]-20,1)
-            playerBulletGroup.add(bulletMid,bulletLeft,bulletRight)
 class PlayerBullet(pygame.sprite.Sprite):
     def __init__(self,x,y,power):
         pygame.sprite.Sprite.__init__(self)
@@ -85,6 +90,92 @@ class PlayerBullet(pygame.sprite.Sprite):
         self.velocity = 30
     def move(self):
         self.rect.centery -= self.velocity
+
+class PlayerChallengeBullet(PlayerBullet):
+    def __init__(self,x,y,power):
+        pygame.sprite.Sprite.__init__(self)
+        super().__init__(x,y,power)
+        self.velocity = 10
+class SmartBoss(pygame.sprite.Sprite):
+    #Should be able to dodge some bullets and attack player based on most frequent dodge directions
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.health = 50
+        self.image = pygame.image.load(os.path.join('Assets','Enemies','Challenge.png')).convert()
+        self.rect = self.image.get_rect()
+        self.image.set_colorkey((0,0,0))
+        self.rect.centerx = 300
+        self.rect.top = 0
+        self.velocity = 9
+        self.threats = []
+        #PlayerAnalysis contains offset X locations of the player
+        #Since the player can only move left/right
+        #Each time shoot out an extra bullet towards the predicted player location
+        #based on how the player tend to dodge each time.
+        self.playerAnalysis = []
+        self.directShootTimer = 20
+    def update(self,playerBulletGroup,enemyBulletGroup):
+        #Update self.threats with player.
+        for bullet in playerBulletGroup:
+            #Do math here
+            #Distance should just be taken by y value, distance is only talking about priority of checking,
+            #not necessarily be dodging for the cloest bullet. ie a missed bullet entirely
+            distance = bullet.rect.top - self.rect.top
+            if distance <= 0 or distance >= 2*self.rect.width + 2*bullet.rect.height:
+                continue
+            position = (bullet.rect.centerx,bullet.rect.centery)
+            #Direction is just going to be (0,-1) since straight bullets by default
+            self.threats.append(Threat(distance,position,bullet.rect.width))
+        self.threats.sort()
+    def move(self):
+        #move based on threats
+        #Default dodge direction = left
+        leftCount = 0
+        rightCount = 0
+        for threat in self.threats:
+            width = threat.width
+            projectionX = threat.position[0]
+            if projectionX -5 < self.rect.width and self.rect.left < self.rect.width + 10:
+                rightCount += 100 / threat.position[1]
+            elif projectionX + 5 > 600 - self.rect.width and self.rect.right > 600 - self.rect.width - 10:
+                leftCount += 100 / threat.position[1]
+            #middle case, can both dodge left or right
+            elif self.rect.right + width > projectionX > self.rect.centerx - width:
+                leftCount += 100 / threat.position[1]
+            elif self.rect.left - width < projectionX < self.rect.centerx + width:
+                rightCount += 100 / threat.position[1]
+        if leftCount > rightCount and self.rect.left > 0:
+            #move left
+            self.rect.centerx -= self.velocity
+        elif rightCount > leftCount and self.rect.right < 600:
+            #move right
+            self.rect.centerx += self.velocity
+        self.threats = []
+    def shoot(self, player, enemyBulletGroup):
+        self.directShootTimer -= 1
+        if self.directShootTimer <= 0:
+            deltX = player.rect.centerx - self.rect.centerx + 10
+            deltY = player.rect.centery - self.rect.bottom
+            mag = (deltX**2 + deltY**2)**0.5
+            mag = 20
+            direction = (deltX/mag, deltY/mag)
+            bullet = ChallengeStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+            enemyBulletGroup.add(bullet)
+            self.directShootTimer = 20
+        # bullet = EnemyStraightBullet()
+        
+        
+class Threat(object):
+    #Threat class for player bullets. easier to manipulate/visualize
+    def __init__(self,distance,position,width,velocity = 10):
+        self.distance = distance
+        self.position = position
+        self.velocity = velocity
+        self.width = width
+    def __lt__(self, other):
+         return isinstance(other,Threat) and self.distance < other.distance
+         
+# class ChallengeEnemyBullet()
 class Enemy(pygame.sprite.Sprite):
     def __init__(self,health,exp,shootTimer,filePath,velocity,x = None, size = (80,80)):
         pygame.sprite.Sprite.__init__(self)
@@ -189,9 +280,15 @@ class EnemyStraightBullet(pygame.sprite.Sprite):
         self.rect.centery = y
         self.direction = direction
     def move(self):
-        self.rect.centerx += 8*self.direction[0]
-        self.rect.centery += 8*self.direction[1]
-        
+        self.rect.centerx += 10*self.direction[0]
+        self.rect.centery += 10*self.direction[1]
+class ChallengeStraightBullet(EnemyStraightBullet):
+    def __init__(self,x,y,direction):
+        pygame.sprite.Sprite.__init__(self)
+        super().__init__(x,y,direction)
+    def move(self):
+        self.rect.centerx += 0.4*self.direction[0]
+        self.rect.centery += 0.4*self.direction[1]
 class Repair(pygame.sprite.Sprite):
     def __init__(self,x,y):
         pygame.sprite.Sprite.__init__(self)

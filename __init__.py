@@ -73,6 +73,7 @@ def titleScreen():
     buttonGroup.add(Button(windowWidth//2, windowHeight//2,
                 "StartGame.png","StartGame2.png",CVShooter))
     buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 100,"Tutorial.png","Tutorial2.png",tutorial))
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,"Challenge.png","Challenge2.png",challenge))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -130,6 +131,129 @@ def loseScreen(score):
         window.blit(score,(225,700))
         buttonGroup.draw(window)
         pygame.display.update()
+def challenge():
+    video = cv2.VideoCapture(0)
+    challenging = True
+    playerSpriteGroup = pygame.sprite.Group() 
+    player = Player(windowWidth//2,windowHeight - 80)
+    playerSpriteGroup.add(player)
+    playerBulletGroup = pygame.sprite.Group()
+    enemyGroup = pygame.sprite.Group()
+    enemyBulletGroup = pygame.sprite.Group()
+    explosionGroup = pygame.sprite.Group()
+    backgroundGroup = pygame.sprite.Group()
+    background = Background("Background.png")
+    backgroundGroup.add(background)
+    shootInterval = 25
+    timeUntilShoot = shootInterval
+    challengeBoss = SmartBoss()
+    enemyGroup.add(challengeBoss)
+    while challenging:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                video.release()
+                cv2.destroyAllWindows()
+                return
+        check, frame = video.read()
+        frame = imutils.resize(frame, width=600)
+        #Mirrors the frame
+        frame = cv2.flip(frame,1)
+        blurred = cv2.GaussianBlur(frame, (11, 11), 0)
+        lowerRed = np.array([100,150,125])
+        higherRed = np.array([120,255,200])
+        
+        csv = cv2.cvtColor(blurred,cv2.COLOR_RGB2HSV)
+        mask = cv2.inRange(csv,lowerRed,higherRed)
+        mask = cv2.erode(mask, None, iterations=2)
+        mask = cv2.dilate(mask, None, iterations=2)
+        ## Finding contour, code adapted from https://www.pyimagesearch.com/2015/09/14/ball-tracking-with-opencv/
+        # find contours in the mask and initialize the current
+        # (x, y) center of the ball
+        cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        center = None
+    
+        # only proceed if at least one contour was found
+        if len(cnts) > 0:
+            # find the largest contour in the mask, then use
+            # it to compute the minimum enclosing circle and
+            # centroid
+            c = max(cnts, key=cv2.contourArea)
+            ((x, y), radius) = cv2.minEnclosingCircle(c)
+            M = cv2.moments(c)
+            center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+            # only proceed if the radius meets a minimum size
+            if radius > 10:
+                # draw the circle and centroid on the frame,
+                # then update the list of tracked points
+                cv2.circle(frame, (int(x), int(y)), int(radius),
+                    (0, 255, 255), 2)
+                cv2.circle(frame, center, 5, (0, 0, 255), -1)
+        
+        if center != None:
+            if center[0]>=350 and player.rect.right < windowWidth:
+                player.rect.centerx += player.velocity
+            elif center[0]<=250 and player.rect.left > 0:
+                player.rect.centerx -= player.velocity
+            # if center[1] >= 250 and player.rect.bottom <= windowHeight:
+            #     player.rect.centery += player.velocity
+            # elif center[1] <= 175 and player.rect.top >= 0:
+            #     player.rect.centery -= player.velocity
+        
+        cv2.line(frame, (250,0), (250,600), (0,255,0),2)
+        cv2.line(frame, (350,0), (350,600), (0,255,0),2)
+        cv2.line(frame, (0,250), (600,250), (0,255,0),2)
+        cv2.line(frame, (0,175), (600,175), (0,255,0),2)
+        cv2.imshow("Webcam",frame)
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_q]:
+            challenge = False
+        if keys[pygame.K_t]:
+            player.powerLevel = 3
+        if keys[pygame.K_RIGHT]:
+            player.rect.centerx += 5
+        if keys[pygame.K_LEFT]:
+            player.rect.centerx -= 5
+        if timeUntilShoot <= 0 and challenging:
+            player.shoot(playerBulletGroup,"Challenge")
+            timeUntilShoot = shootInterval
+        else:
+            timeUntilShoot -= 1
+        for bullet in playerBulletGroup:
+            bullet.move()
+            if bullet.rect.bottom <= 0:
+                playerBulletGroup.remove(bullet)
+            for enemy in enemyGroup:
+                if enemy.rect.colliderect(bullet.rect):
+                    enemy.health -= 1
+                    print("hit")
+                    playerBulletGroup.remove(bullet)
+        for enemy in enemyGroup:
+            enemy.update(playerBulletGroup,enemyBulletGroup)
+            enemy.move()
+            enemy.shoot(player,enemyBulletGroup)
+        for bullet in enemyBulletGroup:
+            bullet.move()
+            if bullet.rect.colliderect(player.rect):
+                player.health -= 1
+                enemyBulletGroup.remove(bullet)
+        if player.health <= 0:
+            challenging = False
+        window.fill((0,0,0))
+        
+        backgroundGroup.draw(window)
+        playerSpriteGroup.draw(window)
+        enemyGroup.draw(window)
+        enemyBulletGroup.draw(window)
+        playerBulletGroup.draw(window)
+        playerHP = hpFont.render("Health: "+ str(player.health),False, (255,255,255))
+        window.blit(playerHP,(20,windowHeight-50))
+        pygame.display.update()
+    video.release()
+    cv2.destroyAllWindows()
+    return
 def tutorial():
     print("start tutorial")
     video = cv2.VideoCapture(0)
@@ -496,5 +620,5 @@ def CVShooter():
     cv2.destroyAllWindows()
     loseScreen(player.exp + (player.powerLevel-1)*100)
     return
-
+# challenge()
 titleScreen()
