@@ -72,8 +72,10 @@ def titleScreen():
     buttonGroup = pygame.sprite.Group()
     buttonGroup.add(Button(windowWidth//2, windowHeight//2,
                 "StartGame.png","StartGame2.png",CVShooter))
-    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 100,"Tutorial.png","Tutorial2.png",tutorial))
-    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,"Challenge.png","Challenge2.png",challenge))
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 100,
+                                    "Tutorial.png","Tutorial2.png",tutorial))
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,
+                                    "Challenge.png","Challenge2.png",challenge))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -93,7 +95,8 @@ def winScreen(score):
     buttonGroup = pygame.sprite.Group()
     buttonGroup.add(Button(windowWidth//2, windowHeight//2 + 100,
                 "Restart.png","Restart2.png",CVShooter))
-    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,"ReturnToTitle.png","ReturnToTitle2.png",titleScreen))
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,
+                            "ReturnToTitle.png","ReturnToTitle2.png",titleScreen))
     score = hpFont.render("Score: %d" %(score), False, (255,255,255))
     while True:
         for event in pygame.event.get():
@@ -216,11 +219,14 @@ def challenge():
             player.rect.centerx += 5
         if keys[pygame.K_LEFT]:
             player.rect.centerx -= 5
+        if keys[pygame.K_h]:
+            player.health += 1
         if timeUntilShoot <= 0 and challenging:
             player.shoot(playerBulletGroup,"Challenge")
             timeUntilShoot = shootInterval
         else:
             timeUntilShoot -= 1
+        player.update(enemyBulletGroup)
         for bullet in playerBulletGroup:
             bullet.move()
             if bullet.rect.bottom <= 0:
@@ -234,11 +240,25 @@ def challenge():
             enemy.update(playerBulletGroup,enemyBulletGroup)
             enemy.move()
             enemy.shoot(player,enemyBulletGroup)
+            score = enemy.score
         for bullet in enemyBulletGroup:
-            bullet.move()
-            if bullet.rect.colliderect(player.rect):
-                player.health -= 1
-                enemyBulletGroup.remove(bullet)
+            if isinstance(bullet,HomingBullet):
+                if bullet.move(player):
+                    enemyBulletGroup.remove(bullet)
+                if bullet.rect.colliderect(player.rect):
+                    if not player.invincible:
+                        player.health -= 1
+                        player.invincible = True
+                        player.invincibleTimer = 8
+                    enemyBulletGroup.remove(bullet)
+            else:
+                bullet.move()
+                if bullet.rect.colliderect(player.rect):
+                    if not player.invincible:
+                        player.health -= 1
+                        player.invincible = True
+                        player.invincibleTimer = 8
+                    enemyBulletGroup.remove(bullet)
         if player.health <= 0:
             challenging = False
         window.fill((0,0,0))
@@ -250,10 +270,38 @@ def challenge():
         playerBulletGroup.draw(window)
         playerHP = hpFont.render("Health: "+ str(player.health),False, (255,255,255))
         window.blit(playerHP,(20,windowHeight-50))
+        challengeScore = hpFont.render("Score: "+ str(score),False, (255,255,255))
+        window.blit(challengeScore,(400,windowHeight-50))
         pygame.display.update()
     video.release()
     cv2.destroyAllWindows()
+    challengeEnd(score)
+    #Challenge End screen or something
     return
+    
+def challengeEnd(score):
+    bgGroup = pygame.sprite.Group()
+    bgGroup.add(Background("ChallengeEnd.png"))
+    buttonGroup = pygame.sprite.Group()
+    buttonGroup.add(Button(windowWidth//2, windowHeight//2 + 100,
+                "Restart.png","Restart2.png",challenge))
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,
+                            "ReturnToTitle.png","ReturnToTitle2.png",titleScreen))
+    score = hpFont.render("Score: %d" %(score), False, (255,255,255))
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        for button in buttonGroup:
+            button.update(mouse,click)
+        window.fill((0,0,0))
+        bgGroup.draw(window)
+        window.blit(score,(225,700))
+        buttonGroup.draw(window)
+        pygame.display.update()
 def tutorial():
     print("start tutorial")
     video = cv2.VideoCapture(0)
@@ -391,7 +439,8 @@ def CVShooter():
         ##handles spawning here
         if (spawnInterval <= 0) and curLevelProgress[0] <= len(levels) and not levelEnd:
             levelBefore = curLevelProgress[0]
-            spawnInterval,curLevelProgress = spawn(enemyGroup,levels,curLevelProgress,teamEnemyGroup)
+            spawnInterval,curLevelProgress = spawn(enemyGroup,levels,
+                                                    curLevelProgress,teamEnemyGroup)
             
             if curLevelProgress[0] > levelBefore:
                 levelEnd = True
@@ -522,9 +571,9 @@ def CVShooter():
                         player.exp += enemy.exp
                         if (random.randint(int(player.performance),100) >= 80):
                             spawnPowerUp(player,powerUpGroup,enemy.rect.center)
-                        explode(enemy.rect.centerx,enemy.rect.centery,enemy.rect.size,explosionGroup)
+                        explode(enemy.rect.centerx,enemy.rect.centery,
+                                            enemy.rect.size,explosionGroup)
                         enemyGroup.remove(enemy)
-            
             if enemy.rect.colliderect(player.rect):
                 if player.invincible == False:
                     player.health-=1
@@ -612,7 +661,8 @@ def CVShooter():
         if player.powerLevel == 3:
             playerEXP = hpFont.render("Max EXP",False, (255,255,255))
         else:
-            playerEXP = hpFont.render("EXP: "+ str(player.exp) + "/100",False, (255,255,255))
+            playerEXP = hpFont.render("EXP: "+ str(player.exp) + "/100",
+                                                    False, (255,255,255))
         window.blit(playerEXP,(420,windowHeight-50))
         pygame.display.update()
         clock.tick(gameSpeed)

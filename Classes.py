@@ -114,6 +114,9 @@ class SmartBoss(pygame.sprite.Sprite):
         #based on how the player tend to dodge each time.
         self.playerAnalysis = []
         self.directShootTimer = 20
+        self.homingShootTimer = 100
+        self.score = 0
+        
     def update(self,playerBulletGroup,enemyBulletGroup):
         #Update self.threats with player.
         for bullet in playerBulletGroup:
@@ -135,6 +138,7 @@ class SmartBoss(pygame.sprite.Sprite):
         for threat in self.threats:
             width = threat.width
             projectionX = threat.position[0]
+            self.score += 1
             if projectionX -5 < self.rect.width and self.rect.left < self.rect.width + 10:
                 rightCount += 100 / threat.position[1]
             elif projectionX + 5 > 600 - self.rect.width and self.rect.right > 600 - self.rect.width - 10:
@@ -144,6 +148,8 @@ class SmartBoss(pygame.sprite.Sprite):
                 leftCount += 100 / threat.position[1]
             elif self.rect.left - width < projectionX < self.rect.centerx + width:
                 rightCount += 100 / threat.position[1]
+            else:
+                self.score -= 1
         if leftCount > rightCount and self.rect.left > 0:
             #move left
             self.rect.centerx -= self.velocity
@@ -152,6 +158,7 @@ class SmartBoss(pygame.sprite.Sprite):
             self.rect.centerx += self.velocity
         self.threats = []
     def shoot(self, player, enemyBulletGroup):
+        self.homingShootTimer -= 1
         self.directShootTimer -= 1
         if self.directShootTimer <= 0:
             deltX = player.rect.centerx - self.rect.centerx + 10
@@ -162,9 +169,38 @@ class SmartBoss(pygame.sprite.Sprite):
             bullet = ChallengeStraightBullet(self.rect.centerx,self.rect.bottom,direction)
             enemyBulletGroup.add(bullet)
             self.directShootTimer = 20
-        # bullet = EnemyStraightBullet()
+        if self.homingShootTimer <= 0:
+            homingBullet = HomingBullet(self.rect.centerx,self.rect.bottom,(0,0))
+            enemyBulletGroup.add(homingBullet)
+            self.homingShootTimer = 200
+class EnemyStraightBullet(pygame.sprite.Sprite):
+    def __init__(self,x,y,direction):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(os.path.join('Assets','Bullets',
+                            'enemyBullet2.png')).convert()
+        self.image.set_colorkey((0,0,0))
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x
+        self.rect.centery = y
+        self.direction = direction
+    def move(self):
+        self.rect.centerx += 10*self.direction[0]
+        self.rect.centery += 10*self.direction[1]
         
-        
+class HomingBullet(EnemyStraightBullet):
+    def __init__(self,x,y,direction):
+        pygame.sprite.Sprite.__init__(self)
+        super().__init__(x,y,direction)
+        self.timer = 150
+    def move(self,player):
+        deltX = player.rect.centerx - self.rect.centerx
+        deltY = player.rect.centery - self.rect.bottom
+        mag = (deltX**2 + deltY**2)**0.5
+        direction = (deltX/mag, deltY/mag)
+        self.rect.centerx += direction[0]*6
+        self.rect.centery += direction[1]*6
+        self.timer -= 1
+        return self.timer <= 0
 class Threat(object):
     #Threat class for player bullets. easier to manipulate/visualize
     def __init__(self,distance,position,width,velocity = 10):
@@ -269,19 +305,7 @@ class MiniBoss1(Enemy):
     def update(self,playerPerformance):
         self.shootTimer = self.baseShootTimer + playerPerformance
         
-class EnemyStraightBullet(pygame.sprite.Sprite):
-    def __init__(self,x,y,direction):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load(os.path.join('Assets','Bullets',
-                            'enemyBullet2.png')).convert()
-        self.image.set_colorkey((0,0,0))
-        self.rect = self.image.get_rect()
-        self.rect.centerx = x
-        self.rect.centery = y
-        self.direction = direction
-    def move(self):
-        self.rect.centerx += 10*self.direction[0]
-        self.rect.centery += 10*self.direction[1]
+
 class ChallengeStraightBullet(EnemyStraightBullet):
     def __init__(self,x,y,direction):
         pygame.sprite.Sprite.__init__(self)
@@ -348,7 +372,8 @@ class Button(pygame.sprite.Sprite):
 class TeamEnemy(pygame.sprite.Sprite):
     def __init__(self,x = None):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load(os.path.join('Assets','Enemies',"GroupEnemytrial.png")).convert()
+        self.image = pygame.image.load(os.path.join('Assets','Enemies',
+                        "GroupEnemytrial.png")).convert()
         self.rect = self.image.get_rect()
         self.exp = 10
         self.health = 50
@@ -530,7 +555,8 @@ class Boss(pygame.sprite.Sprite):
                                     (-math.cos(math.pi*2/3/(self.fanShots)*i))
                         mag = (xVel**2 + yVel**2)**0.5
                         direction = (xVel/mag,-yVel/mag)
-                        bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+                        bullet = EnemyStraightBullet(self.rect.centerx,
+                                                    self.rect.bottom,direction)
                         enemyBulletGroup.add(bullet)
                     self.fanBulletInterval = 20
                 self.fanBulletDuration -= 1
