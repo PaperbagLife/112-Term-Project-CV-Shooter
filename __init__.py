@@ -67,6 +67,7 @@ def explode(x,y,scale,explosionGroup):
 
 ###Main game
 def titleScreen():
+    time.sleep(0.2)
     bgGroup = pygame.sprite.Group()
     bgGroup.add(Background("TitleScreen.png"))
     buttonGroup = pygame.sprite.Group()
@@ -89,6 +90,7 @@ def titleScreen():
         bgGroup.draw(window)
         buttonGroup.draw(window)
         pygame.display.update()
+    return
 def winScreen(score):
     bgGroup = pygame.sprite.Group()
     bgGroup.add(Background("WinScreen.png"))
@@ -112,6 +114,7 @@ def winScreen(score):
         window.blit(score,(225,700))
         buttonGroup.draw(window)
         pygame.display.update()
+    return
 def loseScreen(score):
     score = hpFont.render("Score: %d" %(score), False, (255,255,255))
     bgGroup = pygame.sprite.Group()
@@ -119,7 +122,8 @@ def loseScreen(score):
     buttonGroup = pygame.sprite.Group()
     buttonGroup.add(Button(windowWidth//2, windowHeight//2 + 100,
                 "Restart.png","Restart2.png",CVShooter))
-    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,"ReturnToTitle.png","ReturnToTitle2.png",titleScreen))
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,
+                        "ReturnToTitle.png","ReturnToTitle2.png",titleScreen))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -134,6 +138,7 @@ def loseScreen(score):
         window.blit(score,(225,700))
         buttonGroup.draw(window)
         pygame.display.update()
+    return
 def challenge():
     video = cv2.VideoCapture(0)
     challenging = True
@@ -215,6 +220,8 @@ def challenge():
             challenge = False
         if keys[pygame.K_t]:
             player.powerLevel = 3
+        if keys[pygame.K_d]:
+            player.health -= 1
         if keys[pygame.K_RIGHT]:
             player.rect.centerx += 5
         if keys[pygame.K_LEFT]:
@@ -296,12 +303,15 @@ def challengeEnd(score):
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         for button in buttonGroup:
-            button.update(mouse,click)
+            execute = button.update(mouse,click)
+        if execute!=None:
+            execute()
         window.fill((0,0,0))
         bgGroup.draw(window)
         window.blit(score,(225,700))
         buttonGroup.draw(window)
         pygame.display.update()
+    return
 def tutorial():
     print("start tutorial")
     video = cv2.VideoCapture(0)
@@ -670,5 +680,4 @@ def CVShooter():
     cv2.destroyAllWindows()
     loseScreen(player.exp + (player.powerLevel-1)*100)
     return
-# challenge()
 titleScreen()

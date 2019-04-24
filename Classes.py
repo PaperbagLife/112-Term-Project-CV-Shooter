@@ -358,6 +358,7 @@ class Button(pygame.sprite.Sprite):
         self.rect.centerx = x
         self.rect.centery = y
         self.action = action
+        self.number = random.randint(1,100)
     def update(self,mousePos,click):
         
         if self.rect.left <= mousePos[0] <= self.rect.right and\
