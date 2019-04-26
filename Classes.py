@@ -96,6 +96,14 @@ class PlayerChallengeBullet(PlayerBullet):
         pygame.sprite.Sprite.__init__(self)
         super().__init__(x,y,power)
         self.velocity = 10
+# class SplitBullet(EnemyStraightBullet):
+#     #This bullet splits at the last second to a predicted location of the player
+#     #The splitting should happen when the bullet is about 
+#     def __init__(sel,x,y,direction):
+#         pygame.sprite.Sprite.__init__(self)
+#         super().__init__(self,x,y,direction)
+#         # self.splitDirection = 
+        
 class SmartBoss(pygame.sprite.Sprite):
     #Should be able to dodge some bullets and attack player based on most frequent dodge directions
     def __init__(self):
@@ -158,6 +166,7 @@ class SmartBoss(pygame.sprite.Sprite):
             self.rect.centerx += self.velocity
         self.threats = []
     def shoot(self, player, enemyBulletGroup):
+        #Get splitBullet instead of direct shoot after a certain timer
         self.homingShootTimer -= 1
         self.directShootTimer -= 1
         if self.directShootTimer <= 0:
@@ -211,7 +220,6 @@ class Threat(object):
     def __lt__(self, other):
          return isinstance(other,Threat) and self.distance < other.distance
          
-# class ChallengeEnemyBullet()
 class Enemy(pygame.sprite.Sprite):
     def __init__(self,health,exp,shootTimer,filePath,velocity,x = None, size = (80,80)):
         pygame.sprite.Sprite.__init__(self)
