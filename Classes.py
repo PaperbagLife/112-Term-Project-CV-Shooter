@@ -96,13 +96,7 @@ class PlayerChallengeBullet(PlayerBullet):
         pygame.sprite.Sprite.__init__(self)
         super().__init__(x,y,power)
         self.velocity = 10
-# class SplitBullet(EnemyStraightBullet):
-#     #This bullet splits at the last second to a predicted location of the player
-#     #The splitting should happen when the bullet is about 
-#     def __init__(sel,x,y,direction):
-#         pygame.sprite.Sprite.__init__(self)
-#         super().__init__(self,x,y,direction)
-#         # self.splitDirection = 
+
         
 class SmartBoss(pygame.sprite.Sprite):
     #Should be able to dodge some bullets and attack player based on most frequent dodge directions
@@ -120,27 +114,45 @@ class SmartBoss(pygame.sprite.Sprite):
         #Since the player can only move left/right
         #Each time shoot out an extra bullet towards the predicted player location
         #based on how the player tend to dodge each time.
-        self.playerAnalysis = []
+        self.playerDodgeAnalysis = []
+        self.predictDirection = None
         self.directShootTimer = 20
         self.homingShootTimer = 100
         self.score = 0
         
-    def update(self,playerBulletGroup,enemyBulletGroup):
+    def update(self,playerBulletGroup,enemyBulletGroup,player):
         #Update self.threats with player.
         for bullet in playerBulletGroup:
-            #Do math here
             #Distance should just be taken by y value, distance is only talking about priority of checking,
             #not necessarily be dodging for the cloest bullet. ie a missed bullet entirely
             distance = bullet.rect.top - self.rect.top
             if distance <= 0 or distance >= 2*self.rect.width + 2*bullet.rect.height:
                 continue
+            if bullet.rect.centerx - self.rect.centerx >= 80:
+                continue
             position = (bullet.rect.centerx,bullet.rect.centery)
             #Direction is just going to be (0,-1) since straight bullets by default
             self.threats.append(Threat(distance,position,bullet.rect.width))
         self.threats.sort()
-    def move(self):
+        for bullet in enemyBulletGroup:
+            if bullet.tracked:
+                continue
+            if bullet.rect.centerx >= player.rect.centerx:
+                #Take note of the player's current x value
+                if len(self.playerDodgeAnalysis) > 10:
+                    self.playerDodgeAnalysis.pop(0)
+                playerXDodgePos = player.rect.centerx - bullet.rect.centerx
+                self.playerDodgeAnalysis.append(playerXPos)
+        if len(self.playerDodgeAnalysis) != 0:
+            self.predictDirection = (sum(self.playerDodgeAnalysis)/len(self.playerDodgeAnalysis),player.rect.centery)
+        else:
+            self.predictDirection = (0,1)
+    def move(self,player):
         #move based on threats
         #Default dodge direction = left
+        if len(self.threats) == 0:
+            moveX = player.rect.centerx - self.rect.centerx
+            self.rect.centerx += moveX//50
         leftCount = 0
         rightCount = 0
         for threat in self.threats:
@@ -170,14 +182,19 @@ class SmartBoss(pygame.sprite.Sprite):
         self.homingShootTimer -= 1
         self.directShootTimer -= 1
         if self.directShootTimer <= 0:
-            deltX = player.rect.centerx - self.rect.centerx + 10
+            deltX = player.rect.centerx - self.rect.centerx
             deltY = player.rect.centery - self.rect.bottom
-            mag = (deltX**2 + deltY**2)**0.5
+            # mag = (deltX**2 + deltY**2)**0.5
+            # print(mag)
             mag = 20
             direction = (deltX/mag, deltY/mag)
-            bullet = ChallengeStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+            if self.predictDirection != None:
+                bullet = SplitBullet(self.rect.centerx,self.rect.bottom,direction,self.predictDirection)
+            else:
+                bullet = SplitBullet(self.rect.centerx,self.rect.bottom,direction)
             enemyBulletGroup.add(bullet)
             self.directShootTimer = 20
+            
         if self.homingShootTimer <= 0:
             homingBullet = HomingBullet(self.rect.centerx,self.rect.bottom,(0,0))
             enemyBulletGroup.add(homingBullet)
@@ -192,15 +209,18 @@ class EnemyStraightBullet(pygame.sprite.Sprite):
         self.rect.centerx = x
         self.rect.centery = y
         self.direction = direction
+        self.tracked = False
     def move(self):
         self.rect.centerx += 10*self.direction[0]
         self.rect.centery += 10*self.direction[1]
         
+
 class HomingBullet(EnemyStraightBullet):
     def __init__(self,x,y,direction):
         pygame.sprite.Sprite.__init__(self)
         super().__init__(x,y,direction)
         self.timer = 150
+        
     def move(self,player):
         deltX = player.rect.centerx - self.rect.centerx
         deltY = player.rect.centery - self.rect.bottom
@@ -321,6 +341,27 @@ class ChallengeStraightBullet(EnemyStraightBullet):
     def move(self):
         self.rect.centerx += 0.4*self.direction[0]
         self.rect.centery += 0.4*self.direction[1]
+        
+class SplitBullet(ChallengeStraightBullet):
+    #This bullet splits at the last second to a predicted location of the player
+    #The splitting should happen when the bullet is about 400 pixels?
+    def __init__(sel,x,y,direction,splitDirection = (0,1)):
+        pygame.sprite.Sprite.__init__(self)
+        super().__init__(self,x,y,direction)
+        self.splitDirection = splitDirection
+        self.notSplit = True
+        self.tracked = False
+    def move(self,enemyBulletGroup):
+        self.rect.centerx += 0.4*self.direction[0]
+        self.rect.centery += 0.4*self.direction[1]
+        #Use move as an update function maybe lol
+        if self.rect.centery >= 400 and self.notSplit:
+            #Split the bullet
+ 
+            splitter = EnemyStraightBullet(self.rect.centerx,
+                                    self.rect.centery,self.splitDirection)
+            enemyBulletGroup.add(splitter)
+            self.notSplit = False
 class Repair(pygame.sprite.Sprite):
     def __init__(self,x,y):
         pygame.sprite.Sprite.__init__(self)
@@ -445,6 +486,9 @@ class TeamEnemy(pygame.sprite.Sprite):
             bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
             self.shootTimer = self.shootInterval
             enemyBulletGroup.add(bullet)
+    def update(self,performance):
+        self.moveInterval = 30 + performance
+        self.shootInterval = 30 + performance
 class Explosion(pygame.sprite.Sprite):
     def __init__(self,x,y,scale):
         pygame.sprite.Sprite.__init__(self)

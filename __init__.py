@@ -254,6 +254,8 @@ def challenge():
             timeUntilShoot -= 1
         player.update(enemyBulletGroup)
         for bullet in playerBulletGroup:
+            if isinstance(bullet,SplitBullet):
+                bullet.move(enemyBulletGroup)
             bullet.move()
             if bullet.rect.bottom <= 0:
                 playerBulletGroup.remove(bullet)
@@ -263,8 +265,8 @@ def challenge():
                     print("hit")
                     playerBulletGroup.remove(bullet)
         for enemy in enemyGroup:
-            enemy.update(playerBulletGroup,enemyBulletGroup)
-            enemy.move()
+            enemy.update(playerBulletGroup,enemyBulletGroup,player)
+            enemy.move(player)
             enemy.shoot(player,enemyBulletGroup)
             score = enemy.score
         for bullet in enemyBulletGroup:
@@ -459,9 +461,8 @@ def CVShooter():
     video = cv2.VideoCapture(0)
     
     endTimer = 50
-    testCounter = 500
-    testTimer = time.time()
     levelEnd = False
+    winTimer = 50
 ### Main Game
     while endTimer >= 0:
         background.move()
@@ -476,11 +477,13 @@ def CVShooter():
             if curLevelProgress[0] > levelBefore:
                 levelEnd = True
         elif curLevelProgress[0] > len(levels) and len(enemyGroup) == 0 and len(teamEnemyGroup) == 0:
-            print("Currently ended")
-            video.release()
-            cv2.destroyAllWindows()
-            winScreen(player.exp + (player.powerLevel-1)*100)
-            return
+            winTimer -= 1
+            if winTimer <= 0:
+                print("Currently ended")
+                video.release()
+                cv2.destroyAllWindows()
+                winScreen(player.exp + (player.powerLevel-1)*100)
+                return
         if (len(enemyGroup) + len(teamEnemyGroup)) == 0:
             levelEnd = False
         window.fill((0,0,0))
@@ -656,6 +659,7 @@ def CVShooter():
                 teamEnemy.shootInterval = 10
             teamEnemy.move()
             teamEnemy.shoot(enemyBulletGroup,teamEnemyModeOfAction[teamCounter%3],player)
+            teamEnemy.update(player.performance)
             teamCounter += 1
             for bullet in playerBulletGroup:
                 if teamEnemy.rect.colliderect(bullet.rect):
