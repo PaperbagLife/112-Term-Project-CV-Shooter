@@ -345,7 +345,7 @@ class ChallengeStraightBullet(EnemyStraightBullet):
 class SplitBullet(ChallengeStraightBullet):
     #This bullet splits at the last second to a predicted location of the player
     #The splitting should happen when the bullet is about 400 pixels?
-    def __init__(sel,x,y,direction,splitDirection = (0,1)):
+    def __init__(self,x,y,direction,splitDirection = (0,1)):
         pygame.sprite.Sprite.__init__(self)
         super().__init__(self,x,y,direction)
         self.splitDirection = splitDirection
