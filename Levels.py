@@ -11,7 +11,7 @@ def levelConstructor():
     enemy1 = ("Normal",3,10,50,"Enemy1.png",1.5)
     enemy2 = ("Normal",5,15,40,"Enemy2.png",2)
     enemy3 = ("Moving",7,15,50,"Enemy3.png",1.5)
-    miniBoss1 = ("MiniBoss", 20, 100, 30,"miniBoss.png",3)
+    miniBoss1 = ("MiniBoss", 50, 100, 30,"miniBoss.png",3)
     teamEnemy1 = ("Team",None)
     teamEnemy2 = ("Team",None)
     teamEnemy3 = ("Team",None)

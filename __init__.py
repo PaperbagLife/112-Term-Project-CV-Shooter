@@ -1,3 +1,20 @@
+# https://vignette.wikia.nocookie.net/metalgear/images/6/64/Wakh.jpg/revision/latest?cb=20150924235431
+# Commander in tutorial, Modified using photoshop
+# https://d2v9y0dukr6mq2.cloudfront.net/video/thumbnail/0kjHIH6/fireflies-flying-on-a-starry-night-background_s-ydiobue_thumbnail-full01.png
+# background of game/tutorial/challenge. dimensions modified using photoshop
+# Buttons/texts edited using cooltext.com
+# Enemy bullet/player bullet, By Master484
+# http://m484games.ucoz.com/
+# laser attack animation from netcake3, https://opengameart.org/content/laser-effect-sheet
+# Enemy ship taken from https://opengameart.org/content/space-ship-construction-kit, by Skorpio
+# Player ship By MillionthVector (http://millionthvector.blogspot.de)
+# This work has been released under the Creative Commons BY License: https://creativecommons.org/licenses/by/4.0/
+# Modified for ship display while invincible
+# Repair powerup taken from https://longfordpc.com/images/wrench-clipart-gear-wrench-6.png,
+# Modified into green color using photoshop
+
+
+
 import pygame
 import os
 import sys
@@ -163,6 +180,8 @@ def challenge():
                 video.release()
                 cv2.destroyAllWindows()
                 return
+        ##Code adapted from https://docs.opencv.org/3.4/df/d9d/tutorial_py_colorspaces.html
+        ##For changing color space and masking
         check, frame = video.read()
         frame = imutils.resize(frame, width=600)
         #Mirrors the frame
@@ -329,6 +348,8 @@ def tutorial():
                 video.release()
                 cv2.destroyAllWindows()
                 return
+        ##Code adapted from https://docs.opencv.org/3.4/df/d9d/tutorial_py_colorspaces.html
+        ##For changing color space and masking
         check, frame = video.read()
         frame = imutils.resize(frame, width=600)
         #Mirrors the frame
