@@ -1,8 +1,9 @@
+# This contains how the level of the main game is constructed, 
+# calling the level constructor fucntion will return a list of level objects
+# Which the spawn function in main game will handle and spawn according to level content.
+
 import random
 from Classes import *
-#This contains how the level of the main game is constructed, 
-#calling the level constructor fucntion will return a list of level objects
-#Which the spawn function in main game will handle and spawn according to level content.
 
 def levelConstructor():
     #Level1
