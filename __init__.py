@@ -683,7 +683,7 @@ def CVShooter():
             if bomb.update():
                 bombGroup.remove(bomb)
         teamCounter = 0
-        #teamEnemyModeOfAction = ["Straight","Right","Left"]
+        teamEnemyModeOfAction = ["Straight","Right","Left"]
         for teamEnemy in teamEnemyGroup:
             memberLeft = len(teamEnemyGroup)
             if memberLeft <= 2:
