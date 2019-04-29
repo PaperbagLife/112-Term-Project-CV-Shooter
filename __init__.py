@@ -7,13 +7,15 @@
 # http://m484games.ucoz.com/
 # laser attack animation from netcake3, https://opengameart.org/content/laser-effect-sheet
 # Enemy ship taken from https://opengameart.org/content/space-ship-construction-kit, by Skorpio
+# Explosion effects from player bomb taken from Skorpio's scifi effect set, "explosions".
 # Player ship By MillionthVector (http://millionthvector.blogspot.de)
 # This work has been released under the Creative Commons BY License: https://creativecommons.org/licenses/by/4.0/
 # Modified for ship display while invincible
 # Repair powerup taken from https://longfordpc.com/images/wrench-clipart-gear-wrench-6.png,
 # Modified into green color using photoshop
+# Player bomb icon taken from open2dArt by samoliver
 
-
+#This file contains the main game function, title screen, and tutorial etc.
 
 import pygame
 import os
@@ -73,10 +75,13 @@ def spawn(enemyGroup,levels,curLevelProgress,teamEnemyGroup):
         return (curLevel.spawnWait[levelProgress],(level,levelProgress+1))
         
 def spawnPowerUp(player,powerUpGroup,enemyPos):
-    powerUpType = random.choice(["repair"])
+    powerUpType = random.choice(["repair","bomb"])
     if powerUpType == "repair":
         repair = Repair(enemyPos[0],enemyPos[1])
         powerUpGroup.add(repair)
+    if powerUpType == "bomb":
+        bomb = BombDrop(enemyPos[0],enemyPos[1])
+        powerUpGroup.add(bomb)
     
 def explode(x,y,scale,explosionGroup):
     curExplosion = Explosion(x,y,scale)
@@ -231,12 +236,8 @@ def challenge():
         
         cv2.line(frame, (250,0), (250,600), (0,255,0),2)
         cv2.line(frame, (350,0), (350,600), (0,255,0),2)
-        cv2.line(frame, (0,250), (600,250), (0,255,0),2)
-        cv2.line(frame, (0,175), (600,175), (0,255,0),2)
         cv2.imshow("Webcam",frame)
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_q]:
-            challenge = False
         if keys[pygame.K_t]:
             player.powerLevel = 3
         if keys[pygame.K_d]:
@@ -273,20 +274,16 @@ def challenge():
             if isinstance(bullet,HomingBullet):
                 if bullet.move(player):
                     enemyBulletGroup.remove(bullet)
-                if bullet.rect.colliderect(player.rect):
-                    if not player.invincible:
-                        player.health -= 1
-                        player.invincible = True
-                        player.invincibleTimer = 8
-                    enemyBulletGroup.remove(bullet)
+            elif isinstance(bullet,SplitBullet):
+                bullet.move(enemyBulletGroup)
             else:
                 bullet.move()
-                if bullet.rect.colliderect(player.rect):
-                    if not player.invincible:
-                        player.health -= 1
-                        player.invincible = True
-                        player.invincibleTimer = 8
-                    enemyBulletGroup.remove(bullet)
+            if bullet.rect.colliderect(player.rect):
+                if not player.invincible:
+                    player.health -= 1
+                    player.invincible = True
+                    player.invincibleTimer = 8
+                enemyBulletGroup.remove(bullet)
         if player.health <= 0:
             challenging = False
         window.fill((0,0,0))
@@ -434,7 +431,7 @@ def CVShooter():
     playerSpriteGroup = pygame.sprite.Group() 
     player = Player(windowWidth//2,windowHeight - 80)
     playerSpriteGroup.add(player)
-    
+    bombGroup = pygame.sprite.Group()
     playerBulletGroup = pygame.sprite.Group()
     enemyGroup = pygame.sprite.Group()
     enemyBulletGroup = pygame.sprite.Group()
@@ -561,6 +558,12 @@ def CVShooter():
             player.rect.centery -= player.velocity
         if keys[pygame.K_DOWN] and player.rect.bottom < windowHeight:
             player.rect.centery += player.velocity
+        if keys[pygame.K_SPACE] and player.bombs > 0 and player.bombCD <= 0:
+            bombGroup.add(Bomb())
+            for bullet in enemyBulletGroup:
+                enemyBulletGroup.remove(bullet)
+            player.bombs -= 1
+            player.bombCD = 50
         ### Debug features
         if keys[pygame.K_t]:
             player.exp+=10
@@ -569,14 +572,37 @@ def CVShooter():
             enemyGroup.add(Enemy(3,10,20,"Enemy1.png",5))
         if keys[pygame.K_d]:
             player.health -= 1
-        if keys[pygame.K_2]:
+        if keys[pygame.K_1]:
+            curLevelProgress = (1,0)
             for enemy in enemyGroup:
                 enemyGroup.remove(enemy)
+            for enemy in teamEnemyGroup:
+                teamEnemyGroup.remove(enemy)
+        if keys[pygame.K_2]:
+            curLevelProgress = (2,0)
+            for enemy in enemyGroup:
+                enemyGroup.remove(enemy)
+            for enemy in teamEnemyGroup:
+                teamEnemyGroup.remove(enemy)
+        if keys[pygame.K_3]:
+            curLevelProgress = (3,0)
+            for enemy in enemyGroup:
+                enemyGroup.remove(enemy)
+            for enemy in teamEnemyGroup:
+                teamEnemyGroup.remove(enemy)
+        if keys[pygame.K_4]:
             curLevelProgress = (4,0)
+            for enemy in enemyGroup:
+                enemyGroup.remove(enemy)
+            for enemy in teamEnemyGroup:
+                teamEnemyGroup.remove(enemy)
         if keys[pygame.K_h]:
             player.health += 1
+        if keys[pygame.K_b]:
+            player.bombs += 1
         ### Debug feature end
         player.update(enemyBulletGroup)
+
         shootInterval = 15 - player.powerLevel
         if timeUntilShoot <= 0 and not gameOver:
             player.shoot(playerBulletGroup)
@@ -650,7 +676,12 @@ def CVShooter():
             if powerUp.rect.colliderect(player.rect):
                 if isinstance(powerUp,Repair):
                     player.health += int(3 + player.performance//15)
+                if isinstance(powerUp,BombDrop):
+                    player.bombs += 1
                 powerUpGroup.remove(powerUp)
+        for bomb in bombGroup:
+            if bomb.update():
+                bombGroup.remove(bomb)
         teamCounter = 0
         #teamEnemyModeOfAction = ["Straight","Right","Left"]
         for teamEnemy in teamEnemyGroup:
@@ -687,10 +718,16 @@ def CVShooter():
         playerBulletGroup.draw(window)
         enemyGroup.draw(window)
         teamEnemyGroup.draw(window)
+        bombGroup.draw(window)
         enemyBulletGroup.draw(window)
         powerUpGroup.draw(window)
         preludeGroup.draw(window)
         explosionGroup.draw(window)
+        for i in range(player.bombs):
+            icon = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'PowerUps','bomb.png')).convert(),(12,30))
+            icon.set_colorkey((255,255,255))
+            window.blit(icon,(windowWidth//2 - 10*player.bombs + i*20,windowHeight - 40))
         playerHP = hpFont.render("Health: "+ str(player.health),False, (255,255,255))
         window.blit(playerHP,(20,windowHeight-50))
         if player.powerLevel == 3:

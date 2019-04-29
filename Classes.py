@@ -1,8 +1,11 @@
+# This is a class file that contains the classes the main game will use
+# The majority of the classes inherit from pygame's builtin sprite class
+
 import pygame
 import os
 import random
 import math
- 
+
 class Player(pygame.sprite.Sprite):
     #player ship, has a powerLevel for the bullets, which is leveled up through
     #gaining exp
@@ -24,6 +27,8 @@ class Player(pygame.sprite.Sprite):
         self.rect.centerx = x
         self.rect.centery = y
         self.velocity = 10
+        self.bombs = 3
+        self.bombCD = 0
         ## Get a measure of the user's performance based on health lost in last 20 seconds.
         #Change enemy shootTimer to higher based on the performance.
         #Performance highest is 0, lowest is 50
@@ -32,6 +37,9 @@ class Player(pygame.sprite.Sprite):
         self.performanceTimer = 250 #Around 10 seconds
         self.deltHealth = 0
     def update(self,enemyBulletGroup):
+        if self.bombs >= 8:
+            self.bombs = 8
+        self.bombCD -= 1
         if self.exp >= 100 and self.powerLevel < 3:
             self.powerLevel += 1
             self.exp = 0
@@ -96,7 +104,53 @@ class PlayerChallengeBullet(PlayerBullet):
         pygame.sprite.Sprite.__init__(self)
         super().__init__(x,y,power)
         self.velocity = 10
-
+    
+class Bomb(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        ex1 = pygame.image.load(os.path.join('Assets',
+                        'PowerUps','bomb','0.png')).convert()
+        ex1.set_colorkey((0,0,0))
+        ex2 = pygame.image.load(os.path.join('Assets',
+                        'PowerUps','bomb','1.png')).convert()
+        ex2.set_colorkey((0,0,0))
+        ex3 = pygame.image.load(os.path.join('Assets',
+                        'PowerUps','bomb','2.png')).convert()
+        ex3.set_colorkey((0,0,0))
+        ex4 = pygame.image.load(os.path.join('Assets',
+                        'PowerUps','bomb','3.png')).convert()
+        ex4.set_colorkey((0,0,0))
+        ex5 = pygame.image.load(os.path.join('Assets',
+                        'PowerUps','bomb','4.png')).convert()
+        ex5.set_colorkey((0,0,0))
+        ex6 = pygame.image.load(os.path.join('Assets',
+                        'PowerUps','bomb','5.png')).convert()
+        ex6.set_colorkey((0,0,0))
+        ex7 = pygame.image.load(os.path.join('Assets',
+                        'PowerUps','bomb','6.png')).convert()
+        ex7.set_colorkey((0,0,0))
+        ex8 = pygame.image.load(os.path.join('Assets',
+                        'PowerUps','bomb','7.png')).convert()
+        ex8.set_colorkey((0,0,0))
+        ex9 = pygame.image.load(os.path.join('Assets',
+                        'PowerUps','bomb','8.png')).convert()
+        ex9.set_colorkey((0,0,0))
+        self.image = ex1
+        self.images = [ex1,ex2,ex3,ex4,ex5,ex6,ex7,ex8,ex9]
+        self.rect = self.image.get_rect()
+        self.rect.centerx = 300
+        self.rect.centery = 400
+        self.timeInt = 2
+        self.count = 0
+    def update(self):
+        self.timeInt -= 1
+        if self.timeInt <= 0:
+            self.count += 1
+            self.timeInt = 2
+        if self.count < len(self.images):
+            self.image = self.images[self.count]
+        #Return True if it needs to be destroyed, ie reached the end of explosion
+        return self.count == len(self.images)
         
 class SmartBoss(pygame.sprite.Sprite):
     #Should be able to dodge some bullets and attack player based on most frequent dodge directions
@@ -135,16 +189,22 @@ class SmartBoss(pygame.sprite.Sprite):
             self.threats.append(Threat(distance,position,bullet.rect.width))
         self.threats.sort()
         for bullet in enemyBulletGroup:
-            if bullet.tracked:
+            if bullet.tracked or not isinstance(bullet,SplitBullet):
                 continue
-            if bullet.rect.centerx >= player.rect.centerx:
+            if bullet.rect.centery >= player.rect.centery:
                 #Take note of the player's current x value
-                if len(self.playerDodgeAnalysis) > 10:
+                print("start detection")
+                if len(self.playerDodgeAnalysis) > 5:
                     self.playerDodgeAnalysis.pop(0)
+                print(self.playerDodgeAnalysis)
                 playerXDodgePos = player.rect.centerx - bullet.rect.centerx
-                self.playerDodgeAnalysis.append(playerXPos)
+                self.playerDodgeAnalysis.append(playerXDodgePos)
+                bullet.tracked = True
         if len(self.playerDodgeAnalysis) != 0:
-            self.predictDirection = (sum(self.playerDodgeAnalysis)/len(self.playerDodgeAnalysis),player.rect.centery)
+            displacement = (sum(self.playerDodgeAnalysis)/len(self.playerDodgeAnalysis),
+                                            player.rect.centery - self.rect.centery)
+            mag = (displacement[0]**2 + displacement[1]**2) ** 0.5
+            self.predictDirection = (displacement[0]/mag,displacement[1]/mag)
         else:
             self.predictDirection = (0,1)
     def move(self,player):
@@ -189,16 +249,17 @@ class SmartBoss(pygame.sprite.Sprite):
             mag = 20
             direction = (deltX/mag, deltY/mag)
             if self.predictDirection != None:
+                print("Split Bullet", self.predictDirection)
                 bullet = SplitBullet(self.rect.centerx,self.rect.bottom,direction,self.predictDirection)
             else:
                 bullet = SplitBullet(self.rect.centerx,self.rect.bottom,direction)
             enemyBulletGroup.add(bullet)
             self.directShootTimer = 20
             
-        if self.homingShootTimer <= 0:
-            homingBullet = HomingBullet(self.rect.centerx,self.rect.bottom,(0,0))
-            enemyBulletGroup.add(homingBullet)
-            self.homingShootTimer = 200
+        # if self.homingShootTimer <= 0:
+        #     homingBullet = HomingBullet(self.rect.centerx,self.rect.bottom,(0,0))
+        #     enemyBulletGroup.add(homingBullet)
+        #     self.homingShootTimer = 200
 class EnemyStraightBullet(pygame.sprite.Sprite):
     def __init__(self,x,y,direction):
         pygame.sprite.Sprite.__init__(self)
@@ -347,19 +408,28 @@ class SplitBullet(ChallengeStraightBullet):
     #The splitting should happen when the bullet is about 400 pixels?
     def __init__(self,x,y,direction,splitDirection = (0,1)):
         pygame.sprite.Sprite.__init__(self)
-        super().__init__(self,x,y,direction)
+        super().__init__(x,y,direction)
+        self.image = pygame.image.load(os.path.join('Assets','Bullets',
+                            'enemyBullet1.png')).convert()
         self.splitDirection = splitDirection
         self.notSplit = True
         self.tracked = False
     def move(self,enemyBulletGroup):
-        self.rect.centerx += 0.4*self.direction[0]
-        self.rect.centery += 0.4*self.direction[1]
+        deltaX = self.direction[0]
+        deltaY = self.direction[1]
+        mag = (deltaX**2 + deltaY**2)**0.5
+        deltaX = deltaX / mag
+        deltaY = deltaY / mag
+        
+        self.rect.centerx += 8*deltaX
+        self.rect.centery += 8*deltaY
         #Use move as an update function maybe lol
         if self.rect.centery >= 400 and self.notSplit:
             #Split the bullet
- 
+            directionX = self.splitDirection[0] + deltaX
+            directionY = self.splitDirection[1] + deltaY
             splitter = EnemyStraightBullet(self.rect.centerx,
-                                    self.rect.centery,self.splitDirection)
+                                    self.rect.centery,(directionX/2,directionY/2))
             enemyBulletGroup.add(splitter)
             self.notSplit = False
 class Repair(pygame.sprite.Sprite):
@@ -373,7 +443,17 @@ class Repair(pygame.sprite.Sprite):
         self.rect.centery = y
     def move(self):
         self.rect.centery += 5
-        
+class BombDrop(pygame.sprite.Sprite):
+    def __init__(self,x,y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.transform.rotate(pygame.image.load(os.path.join('Assets','PowerUps',
+                            'bomb.png')).convert(),45)
+        self.image.set_colorkey((255,255,255))
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x
+        self.rect.centery = y
+    def move(self):
+        self.rect.centery += 5
 class Level(object):
     #This level class contains enemies in order, and the spawn wait time between them.
     def __init__(self, enemyList,spawnAmount,spawnWait,level):
