@@ -488,6 +488,9 @@ def CVShooter():
                 levelEnd = True
         elif curLevelProgress[0] > len(levels) and len(enemyGroup) == 0 and len(teamEnemyGroup) == 0:
             winTimer -= 1
+            for bullet in enemyBulletGroup:
+                if isinstance(bullet,Laser):
+                    enemyBulletGroup.remove(bullet)
             if winTimer <= 0:
                 print("Currently ended")
                 video.release()
