@@ -422,7 +422,6 @@ def tutorial():
         window.fill((0,0,0))
         backgroundGroup.draw(window)
         playerSpriteGroup.draw(window)
-        
         pygame.display.update()
     video.release()
     cv2.destroyAllWindows()
@@ -743,7 +742,6 @@ def CVShooter():
             playerEXP = hpFont.render("EXP: "+ str(player.exp) + "/100",
                                                     False, (255,255,255))
         window.blit(playerEXP,(420,windowHeight-50))
-        
         pygame.display.update()
         clock.tick(gameSpeed)
     video.release()
