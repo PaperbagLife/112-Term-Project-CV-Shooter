@@ -567,7 +567,6 @@ class TeamEnemy(pygame.sprite.Sprite):
             self.shootTimer = self.shootInterval
             enemyBulletGroup.add(bullet)
     def update(self,performance):
-        self.moveInterval = 30 + performance
         self.shootInterval = 30 + performance
 class Explosion(pygame.sprite.Sprite):
     def __init__(self,x,y,scale):
