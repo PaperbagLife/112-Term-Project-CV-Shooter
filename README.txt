@@ -1,7 +1,8 @@
 Description:
 A top-down space shooter game controlled by red color detection with opencv, hence the name CV Shooter. 
 Run the project by running __init__.py as a file (ctrl+shift+e).
-Library used: OpenCV and pygame on Python 3.6!!!
+Library used: OpenCV + imutils and pygame on Python 3.6!!!
+do pip install imutils
 A webcam is required to use opencv.
 ShortCut command:
 Arrow keys can move the character on top of opencv

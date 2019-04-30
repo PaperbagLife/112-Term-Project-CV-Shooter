@@ -248,9 +248,9 @@ def challenge():
             player.powerLevel = 3
         if keys[pygame.K_d]:
             player.health -= 1
-        if keys[pygame.K_RIGHT]:
+        if keys[pygame.K_RIGHT] and player.rect.right <= windowWidth:
             player.rect.centerx += 5
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_LEFT] and player.rect.left >= 0:
             player.rect.centerx -= 5
         if keys[pygame.K_h]:
             player.health += 1
@@ -419,6 +419,14 @@ def tutorial():
         keys = pygame.key.get_pressed()
         if keys[pygame.K_q]:
             teaching = False
+        if keys[pygame.K_LEFT] and player.rect.left > 0:
+            player.rect.centerx -= player.velocity
+        if keys[pygame.K_RIGHT] and player.rect.right < windowWidth:
+            player.rect.centerx += player.velocity
+        if keys[pygame.K_UP] and player.rect.top > 0:
+            player.rect.centery -= player.velocity
+        if keys[pygame.K_DOWN] and player.rect.bottom < windowHeight:
+            player.rect.centery += player.velocity
         window.fill((0,0,0))
         backgroundGroup.draw(window)
         playerSpriteGroup.draw(window)
