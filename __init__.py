@@ -180,7 +180,7 @@ def challenge():
     backgroundGroup = pygame.sprite.Group()
     background = Background("Background.png")
     backgroundGroup.add(background)
-    shootInterval = 25
+    shootInterval = 35
     timeUntilShoot = shootInterval
     challengeBoss = SmartBoss()
     enemyGroup.add(challengeBoss)

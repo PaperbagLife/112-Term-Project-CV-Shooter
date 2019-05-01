@@ -162,7 +162,7 @@ class SmartBoss(pygame.sprite.Sprite):
         self.image.set_colorkey((0,0,0))
         self.rect.centerx = 300
         self.rect.top = 0
-        self.velocity = 9
+        self.velocity = 7
         self.threats = []
         #PlayerAnalysis contains offset X locations of the player
         #Since the player can only move left/right
@@ -170,7 +170,7 @@ class SmartBoss(pygame.sprite.Sprite):
         #based on how the player tend to dodge each time.
         self.playerDodgeAnalysis = []
         self.predictDirection = None
-        self.directShootTimer = 20
+        self.directShootTimer = 40
         self.homingShootTimer = 100
         self.score = 0
         
@@ -424,7 +424,7 @@ class SplitBullet(ChallengeStraightBullet):
         self.rect.centerx += 8*deltaX
         self.rect.centery += 8*deltaY
         #Use move as an update function maybe lol
-        if self.rect.centery >= 400 and self.notSplit:
+        if self.rect.centery >= 550 and self.notSplit:
             #Split the bullet
             directionX = self.splitDirection[0] + deltaX
             directionY = self.splitDirection[1] + deltaY
