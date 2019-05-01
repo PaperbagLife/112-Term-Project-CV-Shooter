@@ -235,11 +235,7 @@ def challenge():
                 player.rect.centerx += player.velocity
             elif center[0]<=250 and player.rect.left > 0:
                 player.rect.centerx -= player.velocity
-            # if center[1] >= 250 and player.rect.bottom <= windowHeight:
-            #     player.rect.centery += player.velocity
-            # elif center[1] <= 175 and player.rect.top >= 0:
-            #     player.rect.centery -= player.velocity
-        
+
         cv2.line(frame, (250,0), (250,600), (0,255,0),2)
         cv2.line(frame, (350,0), (350,600), (0,255,0),2)
         cv2.imshow("Webcam",frame)
@@ -254,6 +250,9 @@ def challenge():
             player.rect.centerx -= 5
         if keys[pygame.K_h]:
             player.health += 1
+        if keys[pygame.K_u]:
+            for enemy in enemyGroup:
+                enemy.tempo -= 1
         if timeUntilShoot <= 0 and challenging:
             player.shoot(playerBulletGroup,"Challenge")
             timeUntilShoot = shootInterval

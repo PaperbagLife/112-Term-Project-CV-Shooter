@@ -173,9 +173,16 @@ class SmartBoss(pygame.sprite.Sprite):
         self.directShootTimer = 40
         self.homingShootTimer = 100
         self.score = 0
+        self.tempo = 40
+        self.tempoIncrease = 120
         
     def update(self,playerBulletGroup,enemyBulletGroup,player):
         #Update self.threats with player.
+        self.tempoIncrease -= 1
+        if self.tempoIncrease <= 0:
+            self.tempo -= 2
+            self.tempoIncrease = 120+(200-self.tempo)*5
+        
         for bullet in playerBulletGroup:
             #Distance should just be taken by y value, distance is only talking about priority of checking,
             #not necessarily be dodging for the cloest bullet. ie a missed bullet entirely
@@ -246,7 +253,7 @@ class SmartBoss(pygame.sprite.Sprite):
             deltY = player.rect.centery - self.rect.bottom
             # mag = (deltX**2 + deltY**2)**0.5
             # print(mag)
-            mag = 20
+            mag = 30
             direction = (deltX/mag, deltY/mag)
             if self.predictDirection != None:
                 print("Split Bullet", self.predictDirection)
@@ -254,12 +261,12 @@ class SmartBoss(pygame.sprite.Sprite):
             else:
                 bullet = SplitBullet(self.rect.centerx,self.rect.bottom,direction)
             enemyBulletGroup.add(bullet)
-            self.directShootTimer = 20
+            self.directShootTimer = self.tempo
             
-        # if self.homingShootTimer <= 0:
-        #     homingBullet = HomingBullet(self.rect.centerx,self.rect.bottom,(0,0))
-        #     enemyBulletGroup.add(homingBullet)
-        #     self.homingShootTimer = 200
+        if self.homingShootTimer <= 0:
+            homingBullet = HomingBullet(self.rect.centerx,self.rect.bottom,(0,0))
+            enemyBulletGroup.add(homingBullet)
+            self.homingShootTimer = 150
 class EnemyStraightBullet(pygame.sprite.Sprite):
     def __init__(self,x,y,direction):
         pygame.sprite.Sprite.__init__(self)
