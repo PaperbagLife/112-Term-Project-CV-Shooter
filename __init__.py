@@ -58,16 +58,19 @@ def spawn(enemyGroup,levels,curLevelProgress,teamEnemyGroup):
         enemySpec = curLevel.enemyList[levelProgress]
         enemyType = enemySpec[0]
         if enemyType == "Normal":
-            curEnemy = Enemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
-                                    random.randint(i*windowWidth/numSpawn,(i+1)*windowWidth/numSpawn))
+            curEnemy = Enemy(enemySpec[1],enemySpec[2],enemySpec[3],
+                enemySpec[4],enemySpec[5],random.randint(i*windowWidth/numSpawn,
+                                                    (i+1)*windowWidth/numSpawn))
             enemyGroup.add(curEnemy)
         elif enemyType == "Moving":
-            curEnemy = MoveEnemy(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5],
-                                random.randint(i*(windowWidth-100)/numSpawn+50,
-                                                    (i+1)*(windowWidth-100)/numSpawn)-50)
+            curEnemy = MoveEnemy(enemySpec[1],enemySpec[2],enemySpec[3],
+                enemySpec[4],enemySpec[5],
+                random.randint(i*(windowWidth-100)/numSpawn+50,
+                                        (i+1)*(windowWidth-100)/numSpawn)-50)
             enemyGroup.add(curEnemy)
         elif enemyType == "MiniBoss":
-            curEnemy = MiniBoss1(enemySpec[1],enemySpec[2],enemySpec[3],enemySpec[4],enemySpec[5])
+            curEnemy = MiniBoss1(enemySpec[1],enemySpec[2],
+                                    enemySpec[3],enemySpec[4],enemySpec[5])
             enemyGroup.add(curEnemy)
         elif enemyType == "Team":
             curEnemy = TeamEnemy(enemySpec[1])
@@ -715,7 +718,8 @@ def CVShooter():
                         player.exp += teamEnemy.exp
                         if (random.randint(int(player.performance),100) >= 80):
                             spawnPowerUp(player,powerUpGroup,teamEnemy.rect.center)
-                        explode(teamEnemy.rect.centerx,teamEnemy.rect.centery,teamEnemy.rect.size,explosionGroup)
+                        explode(teamEnemy.rect.centerx,teamEnemy.rect.centery,
+                                            teamEnemy.rect.size,explosionGroup)
                         teamEnemyGroup.remove(teamEnemy)
         for explosion in explosionGroup:
             if explosion.update():

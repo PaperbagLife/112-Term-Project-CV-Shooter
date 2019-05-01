@@ -157,7 +157,8 @@ class SmartBoss(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.health = 50
-        self.image = pygame.image.load(os.path.join('Assets','Enemies','Challenge.png')).convert()
+        self.image = pygame.image.load(os.path.join('Assets','Enemies'
+                                            ,'Challenge.png')).convert()
         self.rect = self.image.get_rect()
         self.image.set_colorkey((0,0,0))
         self.rect.centerx = 300
@@ -209,7 +210,7 @@ class SmartBoss(pygame.sprite.Sprite):
                 bullet.tracked = True
         if len(self.playerDodgeAnalysis) != 0:
             displacement = (sum(self.playerDodgeAnalysis)/len(self.playerDodgeAnalysis),
-                                            player.rect.centery - self.rect.centery)
+                                    player.rect.centery - self.rect.centery)
             mag = (displacement[0]**2 + displacement[1]**2) ** 0.5
             self.predictDirection = (displacement[0]/mag,displacement[1]/mag)
         else:
@@ -226,9 +227,11 @@ class SmartBoss(pygame.sprite.Sprite):
             width = threat.width
             projectionX = threat.position[0]
             self.score += 1
-            if projectionX -5 < self.rect.width and self.rect.left < self.rect.width + 10:
+            if projectionX -5 < self.rect.width and \
+                                    self.rect.left < self.rect.width + 10:
                 rightCount += 100 / threat.position[1]
-            elif projectionX + 5 > 600 - self.rect.width and self.rect.right > 600 - self.rect.width - 10:
+            elif projectionX + 5 > 600 - self.rect.width and \
+                                self.rect.right > 600 - self.rect.width - 10:
                 leftCount += 100 / threat.position[1]
             #middle case, can both dodge left or right
             elif self.rect.right + width > projectionX > self.rect.centerx - width:
@@ -257,14 +260,17 @@ class SmartBoss(pygame.sprite.Sprite):
             direction = (deltX/mag, deltY/mag)
             if self.predictDirection != None:
                 print("Split Bullet", self.predictDirection)
-                bullet = SplitBullet(self.rect.centerx,self.rect.bottom,direction,self.predictDirection)
+                bullet = SplitBullet(self.rect.centerx,
+                            self.rect.bottom,direction,self.predictDirection)
             else:
-                bullet = SplitBullet(self.rect.centerx,self.rect.bottom,direction)
+                bullet = SplitBullet(self.rect.centerx,
+                                                self.rect.bottom,direction)
             enemyBulletGroup.add(bullet)
             self.directShootTimer = self.tempo
             
         if self.homingShootTimer <= 0:
-            homingBullet = HomingBullet(self.rect.centerx,self.rect.bottom,(0,0))
+            homingBullet = HomingBullet(self.rect.centerx,
+                                                        self.rect.bottom,(0,0))
             enemyBulletGroup.add(homingBullet)
             self.homingShootTimer = 150
 class EnemyStraightBullet(pygame.sprite.Sprite):
@@ -317,7 +323,8 @@ class Enemy(pygame.sprite.Sprite):
             self.image = pygame.transform.scale(pygame.image.load\
                     (os.path.join('Assets','Enemies',filePath)).convert(),size)
         else:
-            self.image = pygame.image.load(os.path.join('Assets','Enemies',filePath)).convert()
+            self.image = pygame.image.load(os.path.join('Assets',
+                                                'Enemies',filePath)).convert()
         self.rect = self.image.get_rect()
         self.image.set_colorkey((0,0,0))
         if x != None:
@@ -337,7 +344,8 @@ class Enemy(pygame.sprite.Sprite):
             deltY = player.rect.centery - self.rect.bottom
             mag = (deltX**2 + deltY**2)**0.5
             direction = (deltX/mag, deltY/mag)
-            bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+            bullet = EnemyStraightBullet(self.rect.centerx,
+                                                    self.rect.bottom,direction)
             enemyBulletGroup.add(bullet)
             self.timer = self.shootTimer
     def move(self):
@@ -359,7 +367,8 @@ class MoveEnemy(Enemy):
     
 class MiniBoss1(Enemy):
     def __init__(self,health,exp,shootTimer,filePath,velocity,x = None):
-        super().__init__(health,exp,shootTimer,filePath,velocity,x = 300, size = None)
+        super().__init__(health,exp,shootTimer,filePath,velocity,
+                                                        x = 300, size = None)
         self.rect.bottom = 0
         self.moveRight = True
         self.type1Shots = 5
@@ -375,17 +384,20 @@ class MiniBoss1(Enemy):
                     yVel = (-3**0.5)*math.sin(math.pi*2/3/(self.type1Shots)*i)+\
                                 (-math.cos(math.pi*2/3/(self.type1Shots)*i))
                     direction = (xVel,-yVel)
-                    bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+                    bullet = EnemyStraightBullet(self.rect.centerx,
+                                                    self.rect.bottom,direction)
                     enemyBulletGroup.add(bullet)
                 self.timer = self.shootTimer
             elif attackType == 2:
-                gunPos = [self.rect.bottomleft,self.rect.midbottom,self.rect.bottomright]
+                gunPos = [self.rect.bottomleft,
+                                    self.rect.midbottom,self.rect.bottomright]
                 for gunPosition in gunPos:
                     deltX = player.rect.centerx - gunPosition[0]
                     deltY = player.rect.centery - gunPosition[1]
                     mag = (deltX**2 + deltY**2)**0.5
                     direction = (deltX/mag, deltY/mag)
-                    bullet = EnemyStraightBullet(gunPosition[0],gunPosition[1]-10,direction)
+                    bullet = EnemyStraightBullet(gunPosition[0],
+                                                gunPosition[1]-10,direction)
                     enemyBulletGroup.add(bullet)
                 self.timer = self.shootTimer
     def move(self):
@@ -436,14 +448,14 @@ class SplitBullet(ChallengeStraightBullet):
             directionX = self.splitDirection[0] + deltaX
             directionY = self.splitDirection[1] + deltaY
             splitter = EnemyStraightBullet(self.rect.centerx,
-                                    self.rect.centery,(directionX/2,directionY/2))
+                                self.rect.centery,(directionX/2,directionY/2))
             enemyBulletGroup.add(splitter)
             self.notSplit = False
 class Repair(pygame.sprite.Sprite):
     def __init__(self,x,y):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.transform.scale(pygame.image.load(os.path.join('Assets','PowerUps',
-                            'repair.png')).convert(),(50,50))
+        self.image = pygame.transform.scale(pygame.image.load(os.path.join(\
+                        'Assets','PowerUps','repair.png')).convert(),(50,50))
         self.image.set_colorkey((0,0,0))
         self.rect = self.image.get_rect()
         self.rect.centerx = x
@@ -453,8 +465,8 @@ class Repair(pygame.sprite.Sprite):
 class BombDrop(pygame.sprite.Sprite):
     def __init__(self,x,y):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.transform.rotate(pygame.image.load(os.path.join('Assets','PowerUps',
-                            'bomb.png')).convert(),45)
+        self.image = pygame.transform.rotate(pygame.image.load(\
+                    os.path.join('Assets','PowerUps','bomb.png')).convert(),45)
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect()
         self.rect.centerx = x
@@ -475,7 +487,8 @@ class Level(object):
 class Background(pygame.sprite.Sprite):
     def __init__(self,filePath):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load(os.path.join('Assets','Background',filePath)).convert()
+        self.image = pygame.image.load(os.path.join('Assets',
+                                        'Background',filePath)).convert()
         self.rect = self.image.get_rect()
         self.rect.left = 0
         self.rect.bottom = 800
@@ -487,9 +500,12 @@ class Background(pygame.sprite.Sprite):
 class Button(pygame.sprite.Sprite):
     def __init__(self,x,y,filePath1,filePath2,action):
         pygame.sprite.Sprite.__init__(self)
-        self.normalImage = pygame.image.load(os.path.join('Assets','Background',filePath1)).convert()
-        self.hoverImage = pygame.image.load(os.path.join('Assets','Background',filePath2)).convert()
-        self.image = pygame.image.load(os.path.join('Assets','Background',filePath1)).convert()
+        self.normalImage = pygame.image.load(os.path.join('Assets',
+                                            'Background',filePath1)).convert()
+        self.hoverImage = pygame.image.load(os.path.join('Assets',
+                                            'Background',filePath2)).convert()
+        self.image = pygame.image.load(os.path.join('Assets',
+                                            'Background',filePath1)).convert()
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.centery = y
@@ -554,7 +570,8 @@ class TeamEnemy(pygame.sprite.Sprite):
             deltY = player.rect.centery - self.rect.bottom
             mag = (deltX**2 + deltY**2)**0.5
             direction = (deltX/mag, deltY/mag)
-            bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+            bullet = EnemyStraightBullet(self.rect.centerx,
+                                                    self.rect.bottom,direction)
             self.shootTimer = self.shootInterval
             enemyBulletGroup.add(bullet)
         elif mode == "Right":
@@ -562,7 +579,8 @@ class TeamEnemy(pygame.sprite.Sprite):
             deltY = player.rect.centery - self.rect.bottom
             mag = (deltX**2 + deltY**2)**0.5
             direction = (deltX/mag, deltY/mag)
-            bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+            bullet = EnemyStraightBullet(self.rect.centerx,
+                                                    self.rect.bottom,direction)
             self.shootTimer = self.shootInterval
             enemyBulletGroup.add(bullet)
         elif mode == "Left":
@@ -570,7 +588,8 @@ class TeamEnemy(pygame.sprite.Sprite):
             deltY = player.rect.centery - self.rect.bottom
             mag = (deltX**2 + deltY**2)**0.5
             direction = (deltX/mag, deltY/mag)
-            bullet = EnemyStraightBullet(self.rect.centerx,self.rect.bottom,direction)
+            bullet = EnemyStraightBullet(self.rect.centerx,
+                                                    self.rect.bottom,direction)
             self.shootTimer = self.shootInterval
             enemyBulletGroup.add(bullet)
     def update(self,performance):
@@ -673,8 +692,10 @@ class Boss(pygame.sprite.Sprite):
             #Shoot straight down
             if self.straightDownDuration >= 0:
                 if self.straightDownInterval <= 0:
-                    bullet2 = EnemyStraightBullet(self.rect.centerx+80,self.rect.bottom,(0,1))
-                    bullet3 = EnemyStraightBullet(self.rect.centerx-80,self.rect.bottom,(0,1))
+                    bullet2 = EnemyStraightBullet(self.rect.centerx+80, 
+                                                        self.rect.bottom,(0,1))
+                    bullet3 = EnemyStraightBullet(self.rect.centerx-80,
+                                                        self.rect.bottom,(0,1))
                     enemyBulletGroup.add(bullet2,bullet3)
                     self.straightDownInterval = 10
                 self.straightDownDuration -= 1
