@@ -106,7 +106,7 @@ def explode(x,y,scale,explosionGroup):
 ###Main game
 def titleScreen():
     time.sleep(0.2)
-    pygame.mixer.music.load(os.path.join('Assets','Sound','Trashy-Aliens.wav'))
+    pygame.mixer.music.load(os.path.join('Assets','Sound','Trashy-Aliens.mp3'))
     pygame.mixer.music.play(-1)
     bgGroup = pygame.sprite.Group()
     bgGroup.add(Background("TitleScreen.png"))
@@ -206,7 +206,7 @@ def endInfinite(score):
         pygame.display.update()
     return
 def challenge():
-    pygame.mixer.music.load(os.path.join('Assets','Sound','And-the-Machines-Came-at-Midnight.wav'))
+    pygame.mixer.music.load(os.path.join('Assets','Sound','And-the-Machines-Came-at-Midnight.mp3'))
     pygame.mixer.music.play(-1)
     video = cv2.VideoCapture(0)
     challenging = True
@@ -377,7 +377,7 @@ def challengeEnd(score):
     return
 
 def tutorial():
-    pygame.mixer.music.load(os.path.join('Assets','Sound','Dystopic-Mayhem.wav'))
+    pygame.mixer.music.load(os.path.join('Assets','Sound','Dystopic-Mayhem.mp3'))
     pygame.mixer.music.play(-1)
     video = cv2.VideoCapture(0)
     teaching = True
@@ -473,7 +473,7 @@ def tutorial():
         playerSpriteGroup.draw(window)
         pygame.display.update()
     pygame.mixer.music.stop()
-    pygame.mixer.music.load(os.path.join('Assets','Sound','Trashy-Aliens.wav'))
+    pygame.mixer.music.load(os.path.join('Assets','Sound','Trashy-Aliens.mp3'))
     pygame.mixer.music.play(-1)
     video.release()
     cv2.destroyAllWindows()
@@ -481,7 +481,7 @@ def tutorial():
 
 def CVShooter():
     gameOver = False
-    pygame.mixer.music.load(os.path.join('Assets','Sound','Automation.wav'))
+    pygame.mixer.music.load(os.path.join('Assets','Sound','Automation.mp3'))
     pygame.mixer.music.play(-1)
     #Sprite Group for drawing player only
     playerSpriteGroup = pygame.sprite.Group() 
@@ -806,7 +806,7 @@ def CVShooter():
     return
 def infiniteMode():
     gameOver = False
-    pygame.mixer.music.load(os.path.join('Assets','Sound','Automation.wav'))
+    pygame.mixer.music.load(os.path.join('Assets','Sound','Automation.mp3'))
     pygame.mixer.music.play(-1)
     #Sprite Group for drawing player only
     playerSpriteGroup = pygame.sprite.Group() 
