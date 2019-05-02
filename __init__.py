@@ -25,7 +25,7 @@
 # Player bullet sound taken from soundbible.com, under License Attribution 3.0
 # Enemy explosion sound taken from Michel Baradari,"http://www.cubeengine.com/forum.php4?action=display_thread&thread_id=2164"
 # Player bomb sound effect taken from Iwan Gabovitch, https://opengameart.org/content/rumbleexplosion
-
+# Background Music "Dystopic-Mayhem", "Trashy-Aliens", "Automation", "And-the-Machines-Came-at-Midnight" by Eric Matyas from www.soundimage.org
 
 # This file contains the main game function, title screen, and tutorial etc.
 
@@ -106,6 +106,8 @@ def explode(x,y,scale,explosionGroup):
 ###Main game
 def titleScreen():
     time.sleep(0.2)
+    pygame.mixer.music.load(os.path.join('Assets','Sound','Trashy-Aliens.wav'))
+    pygame.mixer.music.play(-1)
     bgGroup = pygame.sprite.Group()
     bgGroup.add(Background("TitleScreen.png"))
     buttonGroup = pygame.sprite.Group()
@@ -204,6 +206,8 @@ def endInfinite(score):
         pygame.display.update()
     return
 def challenge():
+    pygame.mixer.music.load(os.path.join('Assets','Sound','And-the-Machines-Came-at-Midnight.wav'))
+    pygame.mixer.music.play(-1)
     video = cv2.VideoCapture(0)
     challenging = True
     playerSpriteGroup = pygame.sprite.Group() 
@@ -373,7 +377,8 @@ def challengeEnd(score):
     return
 
 def tutorial():
-    print("start tutorial")
+    pygame.mixer.music.load(os.path.join('Assets','Sound','Dystopic-Mayhem.wav'))
+    pygame.mixer.music.play(-1)
     video = cv2.VideoCapture(0)
     teaching = True
     playerSpriteGroup = pygame.sprite.Group() 
@@ -467,14 +472,17 @@ def tutorial():
         backgroundGroup.draw(window)
         playerSpriteGroup.draw(window)
         pygame.display.update()
+    pygame.mixer.music.stop()
+    pygame.mixer.music.load(os.path.join('Assets','Sound','Trashy-Aliens.wav'))
+    pygame.mixer.music.play(-1)
     video.release()
     cv2.destroyAllWindows()
     return
 
 def CVShooter():
     gameOver = False
-    
-    
+    pygame.mixer.music.load(os.path.join('Assets','Sound','Automation.wav'))
+    pygame.mixer.music.play(-1)
     #Sprite Group for drawing player only
     playerSpriteGroup = pygame.sprite.Group() 
     player = Player(windowWidth//2,windowHeight - 80)
@@ -793,11 +801,13 @@ def CVShooter():
         clock.tick(gameSpeed)
     video.release()
     cv2.destroyAllWindows()
+    pygame.mixer.music.stop()
     loseScreen(player.exp + (player.powerLevel-1)*100)
     return
 def infiniteMode():
     gameOver = False
-    
+    pygame.mixer.music.load(os.path.join('Assets','Sound','Automation.wav'))
+    pygame.mixer.music.play(-1)
     #Sprite Group for drawing player only
     playerSpriteGroup = pygame.sprite.Group() 
     player = Player(windowWidth//2,windowHeight - 80)
@@ -837,6 +847,7 @@ def infiniteMode():
         ##handles spawning here
         if (spawnInterval <= 0):
             enemyToSpawn,spawnInterval = randomEnemy()
+            spawnInterval/=(player.powerLevel/2)
             enemyGroup.add(enemyToSpawn)
         window.fill((0,0,0))
 
@@ -1097,6 +1108,7 @@ def infiniteMode():
         clock.tick(gameSpeed)
     video.release()
     cv2.destroyAllWindows()
+    pygame.mixer.music.stop()
     endInfinite(player.exp + (player.powerLevel-1)*100)
     return
 titleScreen()
