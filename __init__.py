@@ -21,6 +21,10 @@
 # Modified into green color using photoshop
 # Player bomb icon taken from open2dArt by samoliver
 
+# Sound effect credits:
+# Player bullet sound taken from soundbible.com, under License Attribution 3.0
+# Enemy explosion sound taken from Michel Baradari,"http://www.cubeengine.com/forum.php4?action=display_thread&thread_id=2164"
+# Player bomb sound effect taken from Iwan Gabovitch, https://opengameart.org/content/rumbleexplosion
 #This file contains the main game function, title screen, and tutorial etc.
 
 import pygame
@@ -41,6 +45,7 @@ window = pygame.display.set_mode((windowWidth,windowHeight))
 clock = pygame.time.Clock()
 gameSpeed = 30
 
+pygame.mixer.init()
 
 pygame.font.init()
 hpFont = pygame.font.SysFont('Comic Sans MS', 30)

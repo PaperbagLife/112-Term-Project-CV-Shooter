@@ -29,6 +29,8 @@ class Player(pygame.sprite.Sprite):
         self.velocity = 10
         self.bombs = 3
         self.bombCD = 0
+        self.sound = pygame.mixer.Sound(os.path.join('Assets','Sound','playerShoot.wav'))
+        self.sound.set_volume(0.5)
         ## Get a measure of the user's performance based on health lost in last 20 seconds.
         #Change enemy shootTimer to higher based on the performance.
         #Performance highest is 0, lowest is 50
@@ -62,6 +64,7 @@ class Player(pygame.sprite.Sprite):
             self.performanceTimer = 250
             print("Performance: ",self.performance)
     def shoot(self,playerBulletGroup,mode = None):
+        self.sound.play()
         if mode == None:
             if self.powerLevel == 1:
                 bullet = PlayerBullet(self.rect.midtop[0],
@@ -142,7 +145,13 @@ class Bomb(pygame.sprite.Sprite):
         self.rect.centery = 400
         self.timeInt = 2
         self.count = 0
+        self.sound = pygame.mixer.Sound(os.path.join('Assets',
+                        'Sound','bomb.wav'))
+        self.soundPlayed = False
     def update(self):
+        if not self.soundPlayed:
+            self.sound.play()
+            self.soundPlayed = True
         self.timeInt -= 1
         if self.timeInt <= 0:
             self.count += 1
@@ -628,7 +637,14 @@ class Explosion(pygame.sprite.Sprite):
         self.rect.centery = y
         self.count = 0
         self.timeInt = 3
+        self.sound = pygame.mixer.Sound(os.path.join('Assets',
+                        'Sound','explode.wav'))
+        self.sound.set_volume(0.5)
+        self.soundPlayed = False
     def update(self):
+        if not self.soundPlayed:
+            self.sound.play()
+            self.soundPlayed = True
         self.timeInt -= 1
         if self.timeInt <= 0:
             self.count += 1
