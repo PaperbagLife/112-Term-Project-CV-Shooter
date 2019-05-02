@@ -25,7 +25,9 @@
 # Player bullet sound taken from soundbible.com, under License Attribution 3.0
 # Enemy explosion sound taken from Michel Baradari,"http://www.cubeengine.com/forum.php4?action=display_thread&thread_id=2164"
 # Player bomb sound effect taken from Iwan Gabovitch, https://opengameart.org/content/rumbleexplosion
-#This file contains the main game function, title screen, and tutorial etc.
+
+
+# This file contains the main game function, title screen, and tutorial etc.
 
 import pygame
 import os
@@ -37,7 +39,7 @@ import numpy as np
 import imutils
 import copy
 from Classes import *
-from Levels import levelConstructor
+from Levels import levelConstructor,randomEnemy
 
 windowWidth = 600
 windowHeight = 800
@@ -107,12 +109,14 @@ def titleScreen():
     bgGroup = pygame.sprite.Group()
     bgGroup.add(Background("TitleScreen.png"))
     buttonGroup = pygame.sprite.Group()
-    buttonGroup.add(Button(windowWidth//2, windowHeight//2,
+    buttonGroup.add(Button(windowWidth//2, windowHeight//2 - 50,
                 "StartGame.png","StartGame2.png",CVShooter))
-    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 100,
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 30 ,
                                     "Tutorial.png","Tutorial2.png",tutorial))
-    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 110,
                                     "Challenge.png","Challenge2.png",challenge))
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 190,
+                                    "InfiniteMode.png","InfiniteMode2.png",infiniteMode))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -158,6 +162,30 @@ def loseScreen(score):
     buttonGroup = pygame.sprite.Group()
     buttonGroup.add(Button(windowWidth//2, windowHeight//2 + 100,
                 "Restart.png","Restart2.png",CVShooter))
+    buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,
+                        "ReturnToTitle.png","ReturnToTitle2.png",titleScreen))
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        for button in buttonGroup:
+            button.update(mouse,click)
+        window.fill((0,0,0))
+        bgGroup.draw(window)
+        window.blit(score,(225,700))
+        buttonGroup.draw(window)
+        pygame.display.update()
+    return
+def endInfinite(score):
+    score = hpFont.render("Score: %d" %(score), False, (255,255,255))
+    bgGroup = pygame.sprite.Group()
+    bgGroup.add(Background("endInfinite.png"))
+    buttonGroup = pygame.sprite.Group()
+    buttonGroup.add(Button(windowWidth//2, windowHeight//2 + 100,
+                "Restart.png","Restart2.png",infiniteMode))
     buttonGroup.add(Button(windowWidth//2,windowHeight//2 + 200,
                         "ReturnToTitle.png","ReturnToTitle2.png",titleScreen))
     while True:
@@ -343,6 +371,7 @@ def challengeEnd(score):
         buttonGroup.draw(window)
         pygame.display.update()
     return
+
 def tutorial():
     print("start tutorial")
     video = cv2.VideoCapture(0)
@@ -443,7 +472,6 @@ def tutorial():
     return
 
 def CVShooter():
-    score = 0
     gameOver = False
     
     
@@ -766,5 +794,309 @@ def CVShooter():
     video.release()
     cv2.destroyAllWindows()
     loseScreen(player.exp + (player.powerLevel-1)*100)
+    return
+def infiniteMode():
+    gameOver = False
+    
+    #Sprite Group for drawing player only
+    playerSpriteGroup = pygame.sprite.Group() 
+    player = Player(windowWidth//2,windowHeight - 80)
+    playerSpriteGroup.add(player)
+    bombGroup = pygame.sprite.Group()
+    playerBulletGroup = pygame.sprite.Group()
+    enemyGroup = pygame.sprite.Group()
+    enemyBulletGroup = pygame.sprite.Group()
+    preludeGroup = pygame.sprite.Group()
+    explosionGroup = pygame.sprite.Group()
+    powerUpGroup = pygame.sprite.Group()
+    backgroundGroup = pygame.sprite.Group()
+    teamEnemyGroup = pygame.sprite.Group()
+    teamEnemyModeOfAction = ["Straight","Right","Left"]
+    
+    background = Background("Background.png")
+    backgroundGroup.add(background)
+    
+    shootInterval = 10
+    timeUntilShoot = shootInterval
+    ## Wave control
+    spawnInterval = 20
+    # A list of Level Objects
+    #This is a tuple of current level and the progress of the level.
+    
+    #OpenCV setup
+    video = cv2.VideoCapture(0)
+    
+    endTimer = 50
+    levelEnd = False
+    winTimer = 50
+### Main Game
+    while endTimer >= 0:
+        background.move()
+        spawnInterval -= 1
+        
+        ##handles spawning here
+        if (spawnInterval <= 0):
+            enemyToSpawn,spawnInterval = randomEnemy()
+            enemyGroup.add(enemyToSpawn)
+        window.fill((0,0,0))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                video.release()
+                cv2.destroyAllWindows()
+                return
+        ##Open CV part Start
+        ##Code adapted from https://docs.opencv.org/3.4/df/d9d/tutorial_py_colorspaces.html
+        ##For changing color space and masking
+        check, frame = video.read()
+        frame = imutils.resize(frame, width=600)
+        #Mirrors the frame
+        frame = cv2.flip(frame,1)
+        blurred = cv2.GaussianBlur(frame, (11, 11), 0)
+        lowerRed = np.array([100,150,125])
+        higherRed = np.array([120,255,200])
+    
+        csv = cv2.cvtColor(blurred,cv2.COLOR_RGB2HSV)
+        mask = cv2.inRange(csv,lowerRed,higherRed)
+        mask = cv2.erode(mask, None, iterations=2)
+        mask = cv2.dilate(mask, None, iterations=2)
+        ## Finding contour, code adapted from https://www.pyimagesearch.com/2015/09/14/ball-tracking-with-opencv/
+        # find contours in the mask and initialize the current
+        # (x, y) center of the ball
+        cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        center = None
+    
+        # only proceed if at least one contour was found
+        if len(cnts) > 0:
+            # find the largest contour in the mask, then use
+            # it to compute the minimum enclosing circle and
+            # centroid
+            c = max(cnts, key=cv2.contourArea)
+            ((x, y), radius) = cv2.minEnclosingCircle(c)
+            M = cv2.moments(c)
+            center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+            # only proceed if the radius meets a minimum size
+            if radius > 10:
+                # draw the circle and centroid on the frame,
+                # then update the list of tracked points
+                cv2.circle(frame, (int(x), int(y)), int(radius),
+                    (0, 255, 255), 2)
+                cv2.circle(frame, center, 5, (0, 0, 255), -1)
+        ##Control player with opencv, original code
+        if center != None:
+            if center[0]>=350 and player.rect.right < windowWidth:
+                player.rect.centerx += player.velocity
+            elif center[0]<=250 and player.rect.left > 0:
+                player.rect.centerx -= player.velocity
+            if center[1] >= 250 and player.rect.bottom <= windowHeight:
+                player.rect.centery += player.velocity
+            elif center[1] <= 175 and player.rect.top >= 0:
+                player.rect.centery -= player.velocity
+        cv2.line(frame, (250,0), (250,600), (0,255,0),2)
+        cv2.line(frame, (350,0), (350,600), (0,255,0),2)
+        cv2.line(frame, (0,250), (600,250), (0,255,0),2)
+        cv2.line(frame, (0,175), (600,175), (0,255,0),2)
+        cv2.imshow("Webcame",frame)
+        
+        ##Open CV part end
+        
+        keys = pygame.key.get_pressed()
+        
+        if keys[pygame.K_LEFT] and player.rect.left > 0:
+            player.rect.centerx -= player.velocity
+        if keys[pygame.K_RIGHT] and player.rect.right < windowWidth:
+            player.rect.centerx += player.velocity
+        if keys[pygame.K_UP] and player.rect.top > 0:
+            player.rect.centery -= player.velocity
+        if keys[pygame.K_DOWN] and player.rect.bottom < windowHeight:
+            player.rect.centery += player.velocity
+        if keys[pygame.K_SPACE] and player.bombs > 0 and player.bombCD <= 0:
+            bombGroup.add(Bomb())
+            for bullet in enemyBulletGroup:
+                enemyBulletGroup.remove(bullet)
+            player.bombs -= 1
+            player.bombCD = 50
+        ### Debug features
+        if keys[pygame.K_t]:
+            player.exp+=10
+            print(player.powerLevel)
+        if keys[pygame.K_e]:
+            enemyGroup.add(Enemy(3,10,20,"Enemy1.png",5))
+        if keys[pygame.K_d]:
+            player.health -= 1
+        if keys[pygame.K_1]:
+            curLevelProgress = (1,0)
+            for enemy in enemyGroup:
+                enemyGroup.remove(enemy)
+            for enemy in teamEnemyGroup:
+                teamEnemyGroup.remove(enemy)
+        if keys[pygame.K_2]:
+            curLevelProgress = (2,0)
+            for enemy in enemyGroup:
+                enemyGroup.remove(enemy)
+            for enemy in teamEnemyGroup:
+                teamEnemyGroup.remove(enemy)
+        if keys[pygame.K_3]:
+            curLevelProgress = (3,0)
+            for enemy in enemyGroup:
+                enemyGroup.remove(enemy)
+            for enemy in teamEnemyGroup:
+                teamEnemyGroup.remove(enemy)
+        if keys[pygame.K_4]:
+            curLevelProgress = (4,0)
+            for enemy in enemyGroup:
+                enemyGroup.remove(enemy)
+            for enemy in teamEnemyGroup:
+                teamEnemyGroup.remove(enemy)
+        if keys[pygame.K_h]:
+            player.health += 1
+        if keys[pygame.K_b]:
+            player.bombs += 1
+        ### Debug feature end
+        player.update(enemyBulletGroup)
+
+        shootInterval = 15 - player.powerLevel
+        if timeUntilShoot <= 0 and not gameOver:
+            player.shoot(playerBulletGroup)
+            timeUntilShoot = shootInterval
+        else:
+            timeUntilShoot -= 1
+        ## Looping through items in groups to update game state
+        for bullet in playerBulletGroup:
+            bullet.move()
+            if bullet.rect.bottom <= -10:
+                playerBulletGroup.remove(bullet)
+        for enemy in enemyGroup:
+            enemy.move()
+            enemy.update(player.performance)
+            if isinstance(enemy,Boss):
+                enemy.shoot(enemyBulletGroup,player,preludeGroup)
+            else:
+                enemy.shoot(enemyBulletGroup,player)
+            if enemy.rect.top >= windowHeight + 5:
+                enemyGroup.remove(enemy)
+            for bullet in playerBulletGroup:
+                if enemy.rect.colliderect(bullet.rect):
+                    playerBulletGroup.remove(bullet)
+                    enemy.health -= bullet.power
+                    if enemy.health <= 0:
+                        player.exp += enemy.exp
+                        if (random.randint(int(player.performance),100) >= 80):
+                            spawnPowerUp(player,powerUpGroup,enemy.rect.center)
+                        explode(enemy.rect.centerx,enemy.rect.centery,
+                                            enemy.rect.size,explosionGroup)
+                        enemyGroup.remove(enemy)
+            if enemy.rect.colliderect(player.rect):
+                if player.invincible == False:
+                    player.health-=1
+                    player.invincible = True
+                    player.invincibleTimer = 40
+        for prelude in preludeGroup:
+            for enemy in enemyGroup:
+                if isinstance(enemy,Boss):
+                    xLoc = enemy.rect.centerx
+            if prelude.update(xLoc):
+                preludeGroup.remove(prelude)
+        for bullet in enemyBulletGroup:
+            if isinstance(bullet,Laser):
+                #do laser updates using the only enemy in enemySpriteGroup, the boss
+                for enemy in enemyGroup:
+                    if isinstance(enemy,Boss):
+                        xLoc = enemy.rect.centerx
+                if bullet.rect.colliderect(player.rect):
+                    if player.invincible == False:
+                        player.health-=1
+                        player.invincible = True
+                        player.invincibleTimer = 40
+                #Equiv to laser.update()
+                if bullet.update(xLoc):
+                    enemyBulletGroup.remove(bullet)
+            else:
+                bullet.move()
+                if bullet.rect.colliderect(player.rect):
+                    if player.invincible == False:
+                        player.health-=1
+                        player.invincible = True
+                        player.invincibleTimer = 50
+                    enemyBulletGroup.remove(bullet)
+                if bullet.rect.centerx >= windowWidth+10 or bullet.rect.centerx <= -10:
+                    enemyBulletGroup.remove(bullet)
+                if bullet.rect.centery >= windowHeight+10 or bullet.rect.centery <= -10:
+                    enemyBulletGroup.remove(bullet)
+        for powerUp in powerUpGroup:
+            powerUp.move()
+            if powerUp.rect.colliderect(player.rect):
+                if isinstance(powerUp,Repair):
+                    player.health += int(3 + player.performance//15)
+                if isinstance(powerUp,BombDrop):
+                    player.bombs += 1
+                powerUpGroup.remove(powerUp)
+        for bomb in bombGroup:
+            if bomb.update():
+                bombGroup.remove(bomb)
+        teamCounter = 0
+        teamEnemyModeOfAction = ["Straight","Right","Left"]
+        for teamEnemy in teamEnemyGroup:
+            memberLeft = len(teamEnemyGroup)
+            if memberLeft <= 2:
+                teamEnemy.shootInterval = 10
+            teamEnemy.move()
+            teamEnemy.shoot(enemyBulletGroup,teamEnemyModeOfAction[teamCounter%3],player)
+            teamEnemy.update(player.performance)
+            teamCounter += 1
+            for bullet in playerBulletGroup:
+                if teamEnemy.rect.colliderect(bullet.rect):
+                    playerBulletGroup.remove(bullet)
+                    teamEnemy.health -= bullet.power
+                    if teamEnemy.health <= 0:
+                        player.exp += teamEnemy.exp
+                        if (random.randint(int(player.performance),100) >= 80):
+                            spawnPowerUp(player,powerUpGroup,teamEnemy.rect.center)
+                        explode(teamEnemy.rect.centerx,teamEnemy.rect.centery,
+                                            teamEnemy.rect.size,explosionGroup)
+                        teamEnemyGroup.remove(teamEnemy)
+        for explosion in explosionGroup:
+            if explosion.update():
+                explosionGroup.remove(explosion)
+        if player.health <= 0:
+            #Explosion effect and gameOver screen
+            if not gameOver:
+                explode(player.rect.centerx,player.rect.centery,player.rect.size,explosionGroup)
+            gameOver = True
+            playerSpriteGroup.remove(player)
+            endTimer -= 1
+        ##Drawing and updating for sprite group
+        backgroundGroup.draw(window)
+        playerSpriteGroup.draw(window)
+        playerBulletGroup.draw(window)
+        enemyGroup.draw(window)
+        teamEnemyGroup.draw(window)
+        bombGroup.draw(window)
+        enemyBulletGroup.draw(window)
+        powerUpGroup.draw(window)
+        preludeGroup.draw(window)
+        explosionGroup.draw(window)
+        ##Drawing UI, player health etc.
+        for i in range(player.bombs):
+            icon = pygame.transform.scale(pygame.image.load(os.path.join('Assets',
+                        'PowerUps','bomb.png')).convert(),(12,30))
+            icon.set_colorkey((255,255,255))
+            window.blit(icon,(windowWidth//2 - 10*player.bombs + i*20,windowHeight - 40))
+        playerHP = hpFont.render("Health: "+ str(player.health),False, (255,255,255))
+        window.blit(playerHP,(20,windowHeight-50))
+        if player.powerLevel == 3:
+            playerEXP = hpFont.render("Max EXP",False, (255,255,255))
+        else:
+            playerEXP = hpFont.render("EXP: "+ str(player.exp) + "/100",
+                                                    False, (255,255,255))
+        window.blit(playerEXP,(420,windowHeight-50))
+        pygame.display.update()
+        clock.tick(gameSpeed)
+    video.release()
+    cv2.destroyAllWindows()
+    endInfinite(player.exp + (player.powerLevel-1)*100)
     return
 titleScreen()

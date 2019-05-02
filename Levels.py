@@ -46,3 +46,27 @@ def levelConstructor():
     level4 = Level(lv4EnemyList,lv4SpawnAmount,lv4SpawnWait,4)
     levels.append(level4)
     return levels
+    
+def randomEnemy():
+    enemy1 = ("Normal",3,10,50,"Enemy1.png",1.5)
+    enemy2 = ("Normal",5,15,40,"Enemy2.png",2)
+    enemy3 = ("Moving",7,15,50,"Enemy3.png",1.5)
+    miniBoss1 = ("MiniBoss", 50, 100, 30,"miniBoss.png",3)
+    boss = ("Boss",3)
+    type = random.choice(["e","e","e","e","e","e","b1","b2"])
+    if type == "e":
+        num = random.randint(1,3)
+        if num == 1:
+            return Enemy(3,10,50,"Enemy1.png",1.5,random.randint(0,600)),100
+        if num == 2:
+            return Enemy(8,15,50,"Enemy2.png",2,random.randint(0,600)),100
+        if num == 3:
+            return MoveEnemy(8,15,50,"Enemy3.png",1.5,random.randint(0,600)),100
+    if type == "b1":
+        return MiniBoss1(50, 100, 30,"miniBoss.png",3),800
+    if type == "b2":
+        return Boss(3),800
+        
+        
+        
+        

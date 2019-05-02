@@ -662,6 +662,7 @@ class Boss(pygame.sprite.Sprite):
         self.image = pygame.image.load(os.path.join('Assets','Enemies',
                             'Boss.png')).convert()
         self.rect = self.image.get_rect()
+        self.image.set_colorkey((0,0,0))
         self.rect.centerx = 300
         self.rect.bottom = 0
         self.velocity = velocity
