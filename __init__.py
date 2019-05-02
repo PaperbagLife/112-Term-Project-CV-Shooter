@@ -345,6 +345,7 @@ def challenge():
         pygame.display.update()
     video.release()
     cv2.destroyAllWindows()
+    pygame.mixer.music.stop()
     challengeEnd(score)
     #Challenge End screen or something
     return
