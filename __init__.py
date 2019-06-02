@@ -846,7 +846,7 @@ def infiniteMode():
         spawnInterval -= 1
         
         ##handles spawning here
-        if (spawnInterval <= 0):
+        if (spawnInterval <= 0) or len(enemyGroup) == 0:
             enemyToSpawn,spawnInterval = randomEnemy()
             spawnInterval/=(player.powerLevel/2)
             enemyGroup.add(enemyToSpawn)
